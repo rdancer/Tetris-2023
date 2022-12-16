@@ -89,7 +89,7 @@ function drawPiece() {
     // Add block elements for each block in the piece
     currentPiece.shape.forEach((row, y) => {
       row.forEach((value, x) => {
-        if (value === 1) {
+        if (value !== 0) {
           let block = document.createElement("div");
           block.classList.add("block");
           block.classList.add(currentPiece.type);
@@ -107,9 +107,9 @@ function canMoveDown() {
     let canMove = true;
     currentPiece.shape.forEach((row, y) => {
         row.forEach((value, x) => {
-            if (value === 1) {
+            if (value !== 0) {
                 let newY = currentPiece.y + y + 1;
-                if (newY >= 20 || gameBoardArray[newY][currentPiece.x + x] === 1) {
+                if (newY >= 20 || gameBoardArray[newY][currentPiece.x + x] !== 0) {
                     canMove = false;
                 }
             }
@@ -164,13 +164,14 @@ function checkCollision(shape) {
     let collision = false;
     shape.forEach((row, y) => {
         row.forEach((value, x) => {
-            if (value === 1) {
+            if (value 
+== 0) {
                 if (
                     currentPiece.x + x < 0 ||
                     currentPiece.x + x > 9 ||
                     currentPiece.y + y < 0 ||
                     currentPiece.y + y > 19 ||
-                    gameBoardArray[currentPiece.y + y][currentPiece.x + x] === 1
+                    gameBoardArray[currentPiece.y + y][currentPiece.x + x] !== 0
                 ) {
                     collision = true;
                 }
@@ -184,8 +185,8 @@ function checkCollision(shape) {
 function addPieceToBoard() {
     currentPiece.shape.forEach((row, y) => {
         row.forEach((value, x) => {
-            if (value === 1) {
-                gameBoardArray[currentPiece.y + y][currentPiece.x + x] = 1;
+            if (value !== 0) {
+                gameBoardArray[currentPiece.y + y][currentPiece.x + x] = currentPiece.type;
             }
         });
     });
@@ -193,7 +194,7 @@ function addPieceToBoard() {
 
 // Check if the game is over
 function checkGameOver() {
-    return gameBoardArray[0].some(value => value === 1);
+    return gameBoardArray[0].some(value => value !== 0);
 }
 // Update the game state and redraw the game board
 function gameLoop() {
@@ -209,7 +210,7 @@ function gameLoop() {
 // Check for completed rows and remove them
 function checkRows() {
     for (let y = gameBoardArray.length - 1; y >= 0; y--) {
-        if (gameBoardArray[y].every(value => value === 1)) {
+        if (gameBoardArray[y].every(value => value !== 0)) {
             gameBoardArray.splice(y, 1);
             gameBoardArray.unshift(new Array(10).fill(0));
             score++;
@@ -217,15 +218,34 @@ function checkRows() {
     }
 }
 
+// Clear board and reset score
+function resetGame() {
+    clearInterval(gameInterval);
+
+    // Remove any existing block elements from the DOM
+    while (gameBoard.firstChild) {
+        gameBoard.removeChild(gameBoard.firstChild);
+    }
+
+    gameBoardArray = [];
+    for (let i = 0; i < 20; i++) {
+        gameBoardArray.push(new Array(10).fill(0));
+    }
+    score = 0;
+    gameOver = false;
+}
+
 // Draw the game board
 function drawBoard() {
+    // Add block elements for each element in the game board array
     gameBoardArray.forEach((row, y) => {
         row.forEach((value, x) => {
-            if (value === 1) {
+            if (value !== 0) {
                 let block = document.createElement("div");
                 block.classList.add("block");
-                block.style.top = `${y}00%`;
-                block.style.left = `${x}00%`;
+                block.classList.add(value);
+                block.style.top = `${gridSize() * y}px`;
+                block.style.left = `${gridSize() * x}px`;
                 gameBoard.appendChild(block);
             }
         });
@@ -260,6 +280,7 @@ document.addEventListener("keydown", event => {
 // Start the game
 startButton.addEventListener("click", () => {
     //startButton.style.display = "none";
+    resetGame();
     createPiece();
     drawPiece();
     gameInterval = setInterval(gameLoop, 1000);
