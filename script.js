@@ -83,23 +83,24 @@ function createPiece() {
 function drawPiece() {
     // Remove any existing block elements
     while (gameBoard.firstChild) {
-        gameBoard.removeChild(gameBoard.firstChild);
+      gameBoard.removeChild(gameBoard.firstChild);
     }
-
+  
     // Add block elements for each block in the piece
     currentPiece.shape.forEach((row, y) => {
-        row.forEach((value, x) => {
-            if (value === 1) {
-                let block = document.createElement("div");
-                block.classList.add("block");
-                block.classList.add(currentPiece.type);
-                block.style.top = `${currentPiece.y + y}00%`;
-                block.style.left = `${currentPiece.x + x}00%`;
-                gameBoard.appendChild(block);
-            }
-        });
+      row.forEach((value, x) => {
+        if (value === 1) {
+          let block = document.createElement("div");
+          block.classList.add("block");
+          block.classList.add(currentPiece.type);
+          block.style.top = `${gridSize() * (currentPiece.y + y)}px`;
+          block.style.left = `${gridSize() * (currentPiece.x + x)}px`;
+          gameBoard.appendChild(block);
+        }
+      });
     });
-}
+  }
+  
 
 // Check if the current piece can move down by one row
 function canMoveDown() {
