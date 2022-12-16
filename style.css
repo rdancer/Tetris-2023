@@ -65,17 +65,27 @@
   }
   
   /* When .paused is set on <body>, the pause button reads "Resume" */
-  .pause.button .resume {
-    display: none;
+  .pause.button .label {
+    font-size: 0;
   }
-  .pause.button .pause {
-    display: inline;
+  .pause.button .label::after {
+    font-size: 24px;
+    content: "Pause";
   }
-  .paused .pause.button .resume {
-    display: inline;
+  .paused .pause.button .label::after {
+    content: "Resume";
   }
-  .paused .pause.button .pause {
-    display: none
+
+
+  #score {
+    position: absolute;
+    top: calc(38px * 2 + 4px * 3);
+    right: 0;
+    font-size: 24px;
+    border-radius: 5px;
+  }
+  #score .label::after {
+    content: ":";
   }
 
   /*

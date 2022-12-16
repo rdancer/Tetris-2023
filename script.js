@@ -3,6 +3,7 @@ function gridSize() { return parseInt(getComputedStyle(gameBoard).getPropertyVal
 const gameBoard = document.getElementById("game-board");
 const startButton = document.getElementById("start-button");
 const pauseButton = document.getElementById("pause-button");
+const scoreDisplay = document.getElementById("score-display");
 
 const pieceTypes = ["I", "O", "T", "S", "Z", "J", "L"];
 
@@ -221,7 +222,7 @@ function checkRows() {
             gameBoardArray.splice(y, 1);
             gameBoardArray.unshift(new Array(10).fill(0));
             score++;
-
+            scoreDisplay.innerHTML = score;
             // Remove any existing block elements from the DOM
             while (gameBoard.firstChild) gameBoard.removeChild(gameBoard.firstChild);
         }
