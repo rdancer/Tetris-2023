@@ -219,6 +219,9 @@ function checkRows() {
             gameBoardArray.splice(y, 1);
             gameBoardArray.unshift(new Array(10).fill(0));
             score++;
+
+            // Remove any existing block elements from the DOM
+            while (gameBoard.firstChild) gameBoard.removeChild(gameBoard.firstChild);
         }
     }
 }
