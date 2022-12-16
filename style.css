@@ -40,23 +40,44 @@
     left: 0;
   }
 
-  #start-button {
+.button {
     position: absolute;
-    top: 0;
     right: 0;
     width: 100px;
-    height: 50px;
+    height: 38px;
     font-size: 24px;
     background-color: blue;
     color: white;
     border: none;
-  }
+    border-radius: 5px
+}
+.start.button {
+    top: 0;
+}
+.pause.button {
+    top: 42px;
+}
   
-  #start-button:hover {
+ .button:hover {
     background-color: lightblue;
+    color: black;
     cursor: pointer;
   }
   
+  /* When .paused is set on <body>, the pause button reads "Resume" */
+  .pause.button .resume {
+    display: none;
+  }
+  .pause.button .pause {
+    display: inline;
+  }
+  .paused .pause.button .resume {
+    display: inline;
+  }
+  .paused .pause.button .pause {
+    display: none
+  }
+
   /*
   @media (max-width: 600px) {
     #game-board {

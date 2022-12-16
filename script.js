@@ -2,6 +2,7 @@ function gridSize() { return parseInt(getComputedStyle(gameBoard).getPropertyVal
 
 const gameBoard = document.getElementById("game-board");
 const startButton = document.getElementById("start-button");
+const pauseButton = document.getElementById("pause-button");
 
 const pieceTypes = ["I", "O", "T", "S", "Z", "J", "L"];
 
@@ -203,6 +204,7 @@ function checkGameOver() {
 }
 // Update the game state and redraw the game board
 function gameLoop() {
+    if (isPaused()) return;
     movePieceDown();
     checkRows();
     drawBoard();
@@ -229,7 +231,7 @@ function checkRows() {
 // Clear board and reset score
 function resetGame() {
     clearInterval(gameInterval);
-
+    unPause()
     // Remove any existing block elements from the DOM
     while (gameBoard.firstChild) {
         gameBoard.removeChild(gameBoard.firstChild);
@@ -321,6 +323,26 @@ startButton.addEventListener("click", () => {
     createPiece();
     drawPiece();
     gameInterval = setInterval(gameLoop, 1000);
+});
+
+
+function isPaused() {
+    let isPaused = document.body.classList.contains("paused")
+    return isPaused
+}
+function unPause() {
+    document.body.classList.remove("paused")
+}
+// Pause/resume the game
+pauseButton.addEventListener("click", () => {
+    event.preventDefault()
+    event.target.blur() // XXX for some reason this doesn't work
+    startButton.focus(); startButton.blur()  // lest the <Space> keypress that we use to drop the current piece depresses the button *facepalm*
+    if (isPaused()) {
+        unPause()
+    } else {
+        document.body.classList.add("paused")
+    }
 });
 
 
