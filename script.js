@@ -58,6 +58,7 @@ const pieces = {
 const startButton = document.getElementById("start-button");
 startButton.addEventListener("click", startGame);
 
+function gridSize() { return parseInt(getComputedStyle(gameBoard).getPropertyValue("--grid-size"), 10); }
 
 function createPieceElement(type) {
     const element = document.createElement("div");
@@ -70,8 +71,8 @@ function drawPiece(piece) {
         row.forEach((value, x) => {
             if (value === 1) {
                 const block = createPieceElement(piece.type);
-                block.style.left = ((piece.position[1] + y) * 100) + "px";
-                block.style.top = ((piece.position[0] + x) * 100) + "px";
+                block.style.left = ((piece.position[1] + y) * gridSize()) + "px";
+                block.style.top = ((piece.position[0] + x) * gridSize()) + "px";
                 gameBoard.appendChild(block);
             }
         });
@@ -86,7 +87,7 @@ function movePieceRight() {
     piece.position[1] += 1;
     const blocks = document.querySelectorAll(".block");
     blocks.forEach(block => {
-        block.style.left = (block.offsetLeft + 100) + "px";
+        block.style.left = (block.offsetLeft + gridSize()) + "px";
     });
 }
 
