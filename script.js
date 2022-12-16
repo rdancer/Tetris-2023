@@ -254,6 +254,11 @@ function drawBoard() {
 
 // Handle keyboard input
 document.addEventListener("keydown", event => {
+    if (event.code === "Space") {
+        while (canMoveDown()) {
+            movePieceDown();
+        }
+    }
     switch (event.keyCode) {
         case 37: // Left arrow
             if (currentPiece.x > 0 && checkCollision(currentPiece.shape, -1)) {
