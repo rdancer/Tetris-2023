@@ -2,6 +2,10 @@
     --grid-size: 40px;
 }
 
+.debug :focus {
+  outline: 3px dotted green;
+}
+
 .debug * {
   outline: 1px solid red;
 }

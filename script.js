@@ -314,10 +314,13 @@ document.addEventListener("keydown", event => {
 
 // Start the game
 startButton.addEventListener("click", () => {
+    event.preventDefault()
+    event.target.blur() // lest the <Space> keypress that we use to drop the current piece depresses the button *facepalm*
     //startButton.style.display = "none";
     resetGame();
     createPiece();
     drawPiece();
     gameInterval = setInterval(gameLoop, 1000);
 });
+
 
