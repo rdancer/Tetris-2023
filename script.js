@@ -70,6 +70,10 @@ for (let i = 0; i < 20; i++) {
 
 // Create a new random piece
 function createPiece() {
+    try {
+        // The previous piece is no longer the current piece
+        document.getElementsByClassName("current-piece")[0].classList.remove("current-piece");
+    } catch (e) {}
     let type = pieceTypes[Math.floor(Math.random() * pieceTypes.length)];
     currentPiece = {
         type: type,
@@ -81,9 +85,10 @@ function createPiece() {
 
 // Draw the current piece on the game board
 function drawPiece() {
-    // Remove any existing block elements
-    while (gameBoard.firstChild) {
-      gameBoard.removeChild(gameBoard.firstChild);
+    // Remove current element from the game board
+    const blocks = gameBoard.getElementsByClassName("current-piece");
+    for (let i = blocks.length - 1; i >= 0; i--) {
+        gameBoard.removeChild(blocks[i]);
     }
   
     // Add block elements for each block in the piece
@@ -91,8 +96,8 @@ function drawPiece() {
       row.forEach((value, x) => {
         if (value !== 0) {
           let block = document.createElement("div");
-          block.classList.add("block");
-          block.classList.add(currentPiece.type);
+          block.classList.add("block", currentPiece.type, "current-piece");
+          // XXX use grid-row & grid-column to position the block
           block.style.top = `${gridSize() * (currentPiece.y + y)}px`;
           block.style.left = `${gridSize() * (currentPiece.x + x)}px`;
           gameBoard.appendChild(block);
@@ -109,7 +114,7 @@ function canMoveDown() {
         row.forEach((value, x) => {
             if (value !== 0) {
                 let newY = currentPiece.y + y + 1;
-                if (newY >= 20 || gameBoardArray[newY][currentPiece.x + x] !== 0) {
+                if (newY > 19 || gameBoardArray[newY][currentPiece.x + x] !== 0) {
                     canMove = false;
                 }
             }
@@ -160,12 +165,12 @@ function flip(matrix) {
 }
 
 // Check if the current piece collides with any other pieces or the edges of the game board
-function checkCollision(shape) {
+function checkCollision(shape, xOffset = 0) {
     let collision = false;
     shape.forEach((row, y) => {
         row.forEach((value, x) => {
-            if (value 
-== 0) {
+            if (value !== 0) {
+                x += xOffset
                 if (
                     currentPiece.x + x < 0 ||
                     currentPiece.x + x > 9 ||
@@ -252,21 +257,22 @@ function drawBoard() {
     });
 }
 
+
 // Handle keyboard input
 document.addEventListener("keydown", event => {
-    if (event.code === "Space") {
-        while (canMoveDown()) {
-            movePieceDown();
-        }
-    }
     switch (event.keyCode) {
+        case 32: // Space
+            while (canMoveDown()) {
+                movePieceDown();
+            }
+            break;        
         case 37: // Left arrow
-            if (currentPiece.x > 0 && checkCollision(currentPiece.shape, -1)) {
+            if (leftEdgeX(currentPiece) > 0 && checkCollision(currentPiece.shape, -1)) {
                 currentPiece.x--;
             }
             break;
         case 39: // Right arrow
-            if (currentPiece.x < 9 && checkCollision(currentPiece.shape, 1)) {
+            if (rightEdgeX(currentPiece) < 9 && checkCollision(currentPiece.shape, 1)) {
                 currentPiece.x++;
             }
             break;
@@ -280,6 +286,27 @@ document.addEventListener("keydown", event => {
             break;
     }
     drawPiece();
+
+    function columnOccupancy(piece) {
+        let result = []
+        for (let i = 0; i < piece.shape[0].length; i++) {
+            result[i] = 0
+            for (let j = 0; j < piece.shape.length; j++) {
+                result[i] |= piece.shape[j][i]
+            }
+        }
+        return result
+    }
+    function leftEdgeX(piece) {
+        let leftOffset = columnOccupancy(piece).indexOf(1)
+        let leftEdge  = piece.x + leftOffset
+        return leftEdge
+    }
+    function rightEdgeX(piece) {
+        let rightOffset = columnOccupancy(piece).reverse().indexOf(1)
+        let rightEdge = piece.x + (piece.shape.length - 1) - rightOffset
+        return rightEdge
+    }
 });
 
 // Start the game
