@@ -62,7 +62,6 @@ const pieces = {
 let currentPiece;
 let gameBoardArray = [];
 let score = 0;
-let gameOver = false;
 let gameInterval;
 
 // Initialize game board array with empty rows
@@ -72,6 +71,7 @@ for (let i = 0; i < 20; i++) {
 
 // Create a new random piece
 function createPiece() {
+    if (isGameOver()) return;
     try {
         // The previous piece is no longer the current piece
         document.getElementsByClassName("current-piece")[0].classList.remove("current-piece");
@@ -83,6 +83,10 @@ function createPiece() {
         y: 0,
         shape: pieces[type].shape
     };
+    // Check if the new piece collides with any other piece and move it upwards if it does
+    while (!checkCollision(currentPiece.shape)) {
+        currentPiece.y--;
+    }
 }
 
 // Draw the current piece on the game board
@@ -116,7 +120,7 @@ function canMoveDown() {
         row.forEach((value, x) => {
             if (value !== 0) {
                 let newY = currentPiece.y + y + 1;
-                if (newY > 19 || gameBoardArray[newY][currentPiece.x + x] !== 0) {
+                if (newY > 19 || gameBoardArray[newY] && gameBoardArray[newY][currentPiece.x + x] !== 0) {
                     canMove = false;
                 }
             }
@@ -132,9 +136,6 @@ function movePieceDown() {
     } else {
         addPieceToBoard();
         createPiece();
-        if (checkGameOver()) {
-            gameOver = true;
-        }
     }
     drawPiece();
 }
@@ -176,9 +177,9 @@ function checkCollision(shape, xOffset = 0) {
                 if (
                     currentPiece.x + x < 0 ||
                     currentPiece.x + x > 9 ||
-                    currentPiece.y + y < 0 ||
+                    //currentPiece.y + y < 0 ||
                     currentPiece.y + y > 19 ||
-                    gameBoardArray[currentPiece.y + y][currentPiece.x + x] !== 0
+                    gameBoardArray[currentPiece.y + y] && gameBoardArray[currentPiece.y + y][currentPiece.x + x] !== 0
                 ) {
                     collision = true;
                 }
@@ -191,6 +192,7 @@ function checkCollision(shape, xOffset = 0) {
 // Add the current piece to the game board array
 function addPieceToBoard() {
     currentPiece.shape.forEach((row, y) => {
+        if (currentPiece.y + y < 0) return;
         row.forEach((value, x) => {
             if (value !== 0) {
                 gameBoardArray[currentPiece.y + y][currentPiece.x + x] = currentPiece.type;
@@ -200,8 +202,9 @@ function addPieceToBoard() {
 }
 
 // Check if the game is over
-function checkGameOver() {
-    return gameBoardArray[0].some(value => value !== 0);
+function isGameOver() {
+    let gameOver = gameBoardArray[0].some(value => value !== 0)
+    return gameOver;
 }
 // Update the game state and redraw the game board
 function gameLoop() {
@@ -209,9 +212,9 @@ function gameLoop() {
     movePieceDown();
     checkRows();
     drawBoard();
-    if (gameOver) {
+    if (isGameOver()) {
         clearInterval(gameInterval);
-        startButton.style.display = "block";
+        document.body.classList.add("game-over");
     }
 }
 
@@ -244,6 +247,7 @@ function resetGame() {
     }
     score = 0;
     gameOver = false;
+    document.body.classList.remove("game-over");
 }
 
 // Draw the game board
@@ -273,12 +277,12 @@ document.addEventListener("keydown", event => {
             }
             break;        
         case 37: // Left arrow
-            if (leftEdgeX(currentPiece) > 0 && checkCollision(currentPiece.shape, -1)) {
+            if (new Piece(currentPiece).leftEdgeX() > 0 && checkCollision(currentPiece.shape, -1)) {
                 currentPiece.x--;
             }
             break;
         case 39: // Right arrow
-            if (rightEdgeX(currentPiece) < 9 && checkCollision(currentPiece.shape, 1)) {
+            if (new Piece(currentPiece).rightEdgeX() < 9 && checkCollision(currentPiece.shape, 1)) {
                 currentPiece.x++;
             }
             break;
@@ -292,28 +296,51 @@ document.addEventListener("keydown", event => {
             break;
     }
     drawPiece();
+});
 
-    function columnOccupancy(piece) {
+function Piece(piece) {
+    this.piece = piece
+    this.columnOccupancy = () => {
         let result = []
-        for (let i = 0; i < piece.shape[0].length; i++) {
+        for (let i = 0; i < this.piece.shape[0].length; i++) {
             result[i] = 0
-            for (let j = 0; j < piece.shape.length; j++) {
-                result[i] |= piece.shape[j][i]
+            for (let j = 0; j < this.piece.shape.length; j++) {
+                result[i] |= this.piece.shape[j][i]
             }
         }
         return result
     }
-    function leftEdgeX(piece) {
-        let leftOffset = columnOccupancy(piece).indexOf(1)
-        let leftEdge  = piece.x + leftOffset
+    this.leftEdgeX = () => {
+        let leftOffset = this.columnOccupancy(this.piece).indexOf(1)
+        let leftEdge  = this.piece.x + leftOffset
         return leftEdge
     }
-    function rightEdgeX(piece) {
-        let rightOffset = columnOccupancy(piece).reverse().indexOf(1)
-        let rightEdge = piece.x + (piece.shape.length - 1) - rightOffset
+    this.rightEdgeX = () => {
+        let rightOffset = this.columnOccupancy(this.piece).reverse().indexOf(1)
+        let rightEdge = this.piece.x + (this.piece.shape.length - 1) - rightOffset
         return rightEdge
     }
-});
+    this.rowOccupancy = () => {
+        let result = []
+        for (let i = 0; i < this.piece.shape.length; i++) {
+            result[i] = 0
+            for (let j = 0; j < this.piece.shape[0].length; j++) {
+                result[i] |= this.piece.shape[i][j]
+            }
+        }
+        return result
+    }
+    this.topEdgeY = () => {
+        let topOffset = this.rowOccupancy(this.piece).indexOf(1)
+        let topEdge  = this.piece.y + topOffset
+        return topEdge
+    }
+    this.bottomEdgeY = () => {
+        let bottomOffset = this.rowOccupancy(this.piece).reverse().indexOf(1)
+        let bottomEdge = this.piece.y + (this.piece.shape.length - 1) - bottomOffset
+        return bottomEdge
+    }
+}
 
 // Start the game
 startButton.addEventListener("click", () => {
