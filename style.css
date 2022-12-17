@@ -94,8 +94,7 @@ body {
   
   @media (max-width: 600px) {
     #game-board {
-      width: 100%;
-      height: 80%;
+      transform: scale(0.8);
     }
   }
   
