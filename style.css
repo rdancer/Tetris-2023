@@ -29,7 +29,11 @@ body {
     overflow-y: hidden;
 }
 
-#game-board {
+* {
+  font-family: Comic Sans MS, Comic Sans, cursive;
+}
+
+#game-board, .board-overlay {
     display: grid;
     grid-template-columns: repeat(10, 1fr);
     grid-template-rows: repeat(20, 1fr);
@@ -93,7 +97,7 @@ body {
 
   
   @media (max-width: 600px) {
-    #game-board {
+    #game-board, .board-overlay {
       transform: scale(0.85) translate(-7%, -15%);
     }
   }
@@ -106,6 +110,24 @@ body {
     }
   }
   */
+
+
+  .board-overlay {
+    background-color: rgba(0, 0, 0, 0.2);
+    display: none;
+  }
+  .game-over #game-over {
+    display: block;
+    outline: 5px dashed darkblue;
+  }
+  .board-overlay .label {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 36px;
+  }
+
   .block {
     width: var(--grid-size);
     height: var(--grid-size);
