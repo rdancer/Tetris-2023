@@ -24,7 +24,10 @@
     );
     background-size: var(--grid-size) var(--grid-size);
 }
-  
+
+body {
+    overflow-y: hidden;
+}
 
 #game-board {
     display: grid;
