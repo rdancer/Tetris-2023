@@ -118,6 +118,8 @@ body {
   }
   .game-over #game-over {
     display: block;
+  }
+  .debug .game-over #game-over {
     outline: 5px dashed darkblue;
   }
   .board-overlay .label {
