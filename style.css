@@ -94,7 +94,7 @@ body {
   
   @media (max-width: 600px) {
     #game-board {
-      transform: scale(0.8);
+      transform: scale(0.85) translate(-7%, -15%);
     }
   }
   
