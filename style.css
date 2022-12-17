@@ -91,7 +91,7 @@ body {
     content: ":";
   }
 
-  /*
+  
   @media (max-width: 600px) {
     #game-board {
       width: 100%;
@@ -99,6 +99,7 @@ body {
     }
   }
   
+  /*
   @media (min-width: 601px) {
     #game-board {
       width: 80%;
