@@ -246,6 +246,7 @@ function resetGame() {
         gameBoardArray.push(new Array(10).fill(0));
     }
     score = 0;
+    scoreDisplay.innerHTML = score;
     gameOver = false;
     document.body.classList.remove("game-over");
 }
