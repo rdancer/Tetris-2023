@@ -142,7 +142,7 @@ body {
   }
   #game-over {
     z-index: 2;
-    background-color: rgba(0, 0, 0, 0.2);
+    background-color: rgba(0, 0, 0, 61%);
     display: none;
   }
   .game-over #game-over {
