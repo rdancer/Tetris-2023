@@ -4,7 +4,13 @@ window.onload = function() {
     startButton.click()
 }
 
-function gridSize() { return parseInt(getComputedStyle(gameBoard).getPropertyValue("--grid-size"), 10); }
+function gridSize() {
+    let pixels = gameBoard.clientHeight / 20;
+    // XXX the game board height should be divisible by 20, but it's not
+    // We cannot use contrasting colours for the block border, and it doesn't look as good.
+    // console.assert(pixels % 1 === 0, "Grid size is not an integer")
+    return pixels;
+ }
 
 const gameBoard = document.getElementById("game-board");
 const startButton = document.getElementById("start-button");
@@ -78,10 +84,6 @@ for (let i = 0; i < 20; i++) {
 // Create a new random piece
 function createPiece() {
     if (isGameOver()) return;
-    try {
-        // The previous piece is no longer the current piece
-        document.getElementsByClassName("current-piece")[0].classList.remove("current-piece");
-    } catch (e) {}
     let type = pieceTypes[Math.floor(Math.random() * pieceTypes.length)];
     currentPiece = {
         type: type,
@@ -109,9 +111,8 @@ function drawPiece() {
         if (value !== 0) {
           let block = document.createElement("div");
           block.classList.add("block", currentPiece.type, "current-piece");
-          // XXX use grid-row & grid-column to position the block
-          block.style.top = `${gridSize() * (currentPiece.y + y)}px`;
-          block.style.left = `${gridSize() * (currentPiece.x + x)}px`;
+          block.style.top = `calc(var(--grid-size) * ${currentPiece.y + y})`;
+          block.style.left = `calc(var(--grid-size) * ${currentPiece.x + x})`;
           gameBoard.appendChild(block);
         }
       });
@@ -262,18 +263,23 @@ function drawBoard() {
     // Add block elements for each element in the game board array
     gameBoardArray.forEach((row, y) => {
         row.forEach((value, x) => {
-            if (value !== 0) {
+            if (value !== 0 && !fallenBlockExistsAtPosition(x, y)) {
+                console.log("Adding to the board:", `calc(var(--grid-size) * ${y})`, `calc(var(--grid-size) * ${x}`);
+
                 let block = document.createElement("div");
-                block.classList.add("block");
-                block.classList.add(value);
-                block.style.top = `${gridSize() * y}px`;
-                block.style.left = `${gridSize() * x}px`;
+                block.classList.add("fallen", "block", value, `x${x}`, `y${y}`);
+                block.style.top = `calc(var(--grid-size) * ${y})`;
+                block.style.left = `calc(var(--grid-size) * ${x})`;
                 gameBoard.appendChild(block);
             }
         });
     });
 }
 
+// Check if a fallen block exists at a given position
+function fallenBlockExistsAtPosition(x, y) {
+    return gameBoard.querySelector(`.x${x}.y${y}`);
+}
 
 // Handle keyboard input
 document.addEventListener("keydown", event => {

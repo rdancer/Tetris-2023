@@ -162,7 +162,10 @@ body {
   .block {
     width: var(--grid-size);
     height: var(--grid-size);
-    border: 1px solid black;
+    /* low-contrast border and box-sizing: border-box help hide that the borders are wonky because we don't have integer grid sizes */
+    /* border: 1px solid black; */
+    border: 1px solid beige;
+    box-sizing: border-box;
     position: absolute;
     left: 0;
     top: 0;
