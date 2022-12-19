@@ -7,6 +7,7 @@
     --text-size-medium: calc(var(--grid-size) * 24 / 40);
     --text-size-big: calc(var(--grid-size) * 36 / 40);
     --text-size-massive: calc(var(--grid-size) * 48 / 40);
+    --off-white: #DDD;
 }
 
 .debug :focus {
@@ -36,7 +37,6 @@ body {
     overflow: hidden;
     display: flex;
     justify-content: center;
-
 }
 
 * {
@@ -68,7 +68,7 @@ body {
 .button {
     width: 100%;
     background-color: blue;
-    color: white;
+    color: var(--off-white);
     border: none;
     border-radius: 5px;
     padding: calc(var(--grid-size) * 10 / 40);
@@ -80,7 +80,7 @@ body {
 }
 .start.button {
     background-color: green;
-    color: #DDD;
+    color: lightbeige;
 }
   
  .button:hover {
@@ -206,7 +206,7 @@ footer {
   text-align: center;
   background-color: rgba(0,0,0,0.8);
   padding: calc(var(--grid-size) * 10 / 40);
-  color: #DDD;
+  color: var(--off-white);
   text-size: var(--text-size-small);
 }
 
