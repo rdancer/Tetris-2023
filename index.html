@@ -28,19 +28,23 @@
 
   </head>
   <body>
-    <div id="game-board">
-      <!-- Add your Tetris game elements here -->
+    <div id="game-container">
+      <div id="game-board">
+        <!-- Add your Tetris game elements here -->
+      </div>
+      <div id="score" class="board-overlay">
+        <span class="value" id="score-display">0</span>
+      </div>
+      <div id="game-over" class="board-overlay">
+        <span class="label">Game Over</span>
+      </div>
     </div>
-    <button id="start-button" class="start button" tabindex="-1">Start</button>
-    <button id="pause-button" class="pause button" tabindex="-1">
-      <span class="label">Pause</span>
-    </button>
-    <div id="score">
-      <span class="label">Score</span>
-      <span class="value" id="score-display">0</span>
-    </div>
-    <div id="game-over" class="board-overlay">
-      <span class="label">Game Over</span>
+    <div id="controls">
+
+      <button id="start-button" class="start button" tabindex="-1">Restart</button>
+      <button id="pause-button" class="pause button" tabindex="-1">
+        <span class="label">Pause</span>
+      </button>
     </div>
     <footer>
       <a href="https://github.com/rdancer/Tetris-2023">View on GitHub</a>

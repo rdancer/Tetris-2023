@@ -1,3 +1,9 @@
+
+// Start the game automatically after the page has loaded
+window.onload = function() {
+    startButton.click()
+}
+
 function gridSize() { return parseInt(getComputedStyle(gameBoard).getPropertyValue("--grid-size"), 10); }
 
 const gameBoard = document.getElementById("game-board");
