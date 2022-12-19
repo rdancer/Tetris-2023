@@ -1,5 +1,12 @@
 :root {
-    --grid-size: 40px;
+    --grid-size: 4.5vh;
+
+    /* the original design is for font sizes 16/24/36/48px when the grid size is 40px
+       simply divide & multiply */
+    --text-size-small: calc(var(--grid-size) * 16 / 40);
+    --text-size-medium: calc(var(--grid-size) * 24 / 40);
+    --text-size-big: calc(var(--grid-size) * 36 / 40);
+    --text-size-massive: calc(var(--grid-size) * 48 / 40);
 }
 
 .debug :focus {
@@ -55,26 +62,25 @@ body {
     flex-direction: column;
     align-items: center;
     width: calc(2.5 * var(--grid-size));
-  padding-left: 20px;
+  padding-left: calc(var(--grid-size) * 20 / 40);
 }
 
 .button {
     width: 100%;
-    font-size: 24px;
     background-color: blue;
     color: white;
     border: none;
     border-radius: 5px;
-    padding: 10px;
-    margin-bottom: 4px;
+    padding: calc(var(--grid-size) * 10 / 40);
+    margin-bottom: calc(var(--grid-size) * 4 / 40);
+}
+.button,
+.pause.button .label::after {
+    font-size: calc(var(--text-size-medium));
 }
 .start.button {
-    top: 0;
     background-color: green;
     color: #DDD;
-}
-.pause.button {
-    top: 42px;
 }
   
  .button:hover {
@@ -88,7 +94,6 @@ body {
     font-size: 0;
   }
   .pause.button .label::after {
-    font-size: 24px;
     content: "Pause";
   }
   .paused .pause.button .label::after {
@@ -111,25 +116,15 @@ body {
     position: absolute;
     top: 0;
     left: 0;
-    padding: 10px;
+    padding: calc(var(--grid-size) * 10 / 40);
   }
 
   
   @media (max-width: 600px) {
-    #game-container {
-      /* transform: scale(0.85) translate(-7%, -15%); */
+    :root {
+      --grid-size: 7vw;
     }
   }
-  
-  /*
-  @media (min-width: 601px) {
-    #game-board {
-      width: 80%;
-      height: 80%;
-    }
-  }
-  */
-
 
   .board-overlay {
     position: absolute;
@@ -142,7 +137,7 @@ body {
     position: absolute;
     top: 0;
     left: 0;
-    font-size: 24px;
+    font-size: var(--text-size-medium);
     background: none;
   }
   #game-over {
@@ -161,7 +156,7 @@ body {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -95%); /* align slightly above the center */
-    font-size: 36px;
+    font-size: var(--text-size-big);
   }
 
   .block {
@@ -207,12 +202,12 @@ footer {
   width: 100%;
   text-align: center;
   background-color: rgba(0,0,0,0.8);
-  padding: 10px;
+  padding: calc(var(--grid-size) * 10 / 40);
   color: #DDD;
+  text-size: var(--text-size-small);
 }
 
 footer a {
-  font-size: 16px;
   text-decoration: none;
 }
 
