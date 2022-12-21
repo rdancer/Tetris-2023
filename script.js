@@ -1,8 +1,11 @@
 
 // Start the game automatically after the page has loaded
+// and enable touch events
 window.onload = function() {
     startButton.click()
+    TranslateTouchEventsToSyntheticKeyboardEvents(gameBoard);
 }
+
 
 function gridSize() {
     let pixels = gameBoard.clientHeight / 20;
@@ -15,7 +18,26 @@ function gridSize() {
 const gameBoard = document.getElementById("game-board");
 const startButton = document.getElementById("start-button");
 const pauseButton = document.getElementById("pause-button");
+const dropButton = document.getElementById("drop-button");
 const scoreDisplay = document.getElementById("score-display");
+
+(function maybeDebug() {
+    // Show the debug button if the URL contains the #debug hash
+    // The debug button toggles debugging features
+    const debugButton = document.getElementById("debug-button");
+
+    if (window.location.hash === '#debug') {
+        debugButton.classList.add('visible');
+    } else {
+        debugButton.classList.remove('visible');
+    }
+
+    debugButton.addEventListener('click', function() {
+        document.querySelector('html').classList.toggle('debug');
+    });
+})();
+
+//new TranslateTouchEventsToSyntheticKeyboardEvents(gameBoard)
 
 const pieceTypes = ["I", "O", "T", "S", "Z", "J", "L"];
 
@@ -264,7 +286,7 @@ function drawBoard() {
     gameBoardArray.forEach((row, y) => {
         row.forEach((value, x) => {
             if (value !== 0 && !fallenBlockExistsAtPosition(x, y)) {
-                console.log("Adding to the board:", `calc(var(--grid-size) * ${y})`, `calc(var(--grid-size) * ${x}`);
+                // console.log("Adding to the board:", `calc(var(--grid-size) * ${y})`, `calc(var(--grid-size) * ${x}`);
 
                 let block = document.createElement("div");
                 block.classList.add("fallen", "block", value, `x${x}`, `y${y}`);
@@ -285,27 +307,19 @@ function fallenBlockExistsAtPosition(x, y) {
 document.addEventListener("keydown", event => {
     switch (event.keyCode) {
         case 32: // Space
-            while (canMoveDown()) {
-                movePieceDown();
-            }
+            Control.space();
             break;        
         case 37: // Left arrow
-            if (new Piece(currentPiece).leftEdgeX() > 0 && checkCollision(currentPiece.shape, -1)) {
-                currentPiece.x--;
-            }
+            Control.left();
             break;
         case 39: // Right arrow
-            if (new Piece(currentPiece).rightEdgeX() < 9 && checkCollision(currentPiece.shape, 1)) {
-                currentPiece.x++;
-            }
+            Control.right();
             break;
         case 40: // Down arrow
-            if (canMoveDown()) {
-                movePieceDown();
-            }
+            Control.down()
             break;
         case 38: // Up arrow
-            rotatePiece();
+            Control.up();
             break;
     }
     drawPiece();
@@ -356,7 +370,7 @@ function Piece(piece) {
 }
 
 // Start the game
-startButton.addEventListener("click", () => {
+startButton.addEventListener("click", (event) => {
     event.preventDefault()
     event.target.blur() // lest the <Space> keypress that we use to drop the current piece depresses the button *facepalm*
     //startButton.style.display = "none";
@@ -366,6 +380,42 @@ startButton.addEventListener("click", () => {
     gameInterval = setInterval(gameLoop, 1000);
 });
 
+dropButton.addEventListener("click", (event) => {
+    event.preventDefault()
+    event.target.blur() // lest the <Space> keypress that we use to drop the current piece depresses the button *facepalm*
+    //startButton.style.display = "none";
+    while (canMoveDown()) {
+        movePieceDown();
+    }
+    drawPiece();
+});
+
+
+class Control {
+    static space() {
+        while (canMoveDown()) {
+            movePieceDown();
+        }
+    }
+    static left() {
+        if (new Piece(currentPiece).leftEdgeX() > 0 && checkCollision(currentPiece.shape, -1)) {
+            currentPiece.x--;
+        }
+    }
+    static right() {
+        if (new Piece(currentPiece).rightEdgeX() < 9 && checkCollision(currentPiece.shape, 1)) {
+            currentPiece.x++;
+        }
+    }
+    static down() {
+        if (canMoveDown()) {
+            movePieceDown();
+        }
+    }
+    static up() {
+        rotatePiece();
+    }
+}
 
 function isPaused() {
     let isPaused = document.body.classList.contains("paused")

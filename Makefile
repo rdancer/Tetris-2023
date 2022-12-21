@@ -3,7 +3,7 @@ all: browser server
 
 .PHONY: server
 server:
-	python3 -m http.server 8000
+	python3 ./http-server.py 8000
 
 .PHONY: browser
 browser:

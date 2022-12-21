@@ -2,7 +2,7 @@
 <html class="no-debug">
   <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <meta name="apple-mobile-web-app-title" content="Tetris 2023">
     <title>Tetris 2023</title>
     <link rel="stylesheet" type="text/css" href="style.css">
@@ -39,16 +39,23 @@
         <span class="label">Game Over</span>
       </div>
     </div>
+    <div id="gutter" class="terrible hack"></div>
     <div id="controls">
 
       <button id="start-button" class="start button" tabindex="-1">New Game</button>
       <button id="pause-button" class="pause button" tabindex="-1">
         <span class="label">Pause</span>
       </button>
+      <button id="debug-button" class="button" tabindex="-1">
+        <span class="label">Debug</span>
+      </button>
+      <button id="drop-button" class="drop button" tabindex="-1">Drop</button>
     </div>
+    <div id="console"></div>
     <footer>
       <a href="https://github.com/rdancer/Tetris-2023">View on GitHub</a>
     </footer>
+    <script src="touch.js"></script>
     <script src="script.js"></script>
   </body>
 </html>
