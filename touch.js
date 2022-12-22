@@ -107,5 +107,17 @@ function TranslateTouchEventsToSyntheticKeyboardEvents(gameBoard) {
         }
     }
 
+    if (navigator.maxTouchPoints > 0) {
+        this.dropButton = document.getElementById("drop-button");
+        this.dropButton.addEventListener("click", (event) => {
+            event.preventDefault()
+            event.target.blur() // lest the <Space> keypress that we use to drop the current piece depresses the button *facepalm*
+            Control.space();
+        });
+        document.querySelector('html').classList.add('touchscreen');
+    } else {
+        Console.log("touchscreen is not supported");
+    }
+
     console.log("Touch events to synthetic keyboard events translation enabled.");
 }
