@@ -171,6 +171,10 @@ body {
     :root {
       --grid-size: 7vw;
     }
+    #gutter.terrible.hack {
+      display: flex;
+      width: calc(var(--grid-size) * 0.5);
+    }
   }
 
   .board-overlay {
