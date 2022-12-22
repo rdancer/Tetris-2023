@@ -1,0 +1,1 @@
+# tetris_control.py -- This module contains the code for interacting with the Tetris game using Puppeteer. It defines a Control class that provides methods for taking actions in the game, and a PuppeteerControl class that proxies the Control class to the Tetris game in the browser.

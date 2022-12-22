@@ -1,0 +1,1 @@
+# state.py -- This module contains the code for representing the state of the Tetris game. It defines a State class that represents the state of the game at a given point in time, and provides methods for extracting features from the state.
