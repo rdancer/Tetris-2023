@@ -58,13 +58,13 @@
 .debug #game-container {
   outline: 3px dashed black;
 }
-#debug.visible {
-  display: block;
-}
-#debug:not(.visible) {
+
+#debug-button:not(.visible) {
   display: none;
 }
-
+#debug-button.visible {
+  display: block;
+}
 body {
     overflow: hidden;
     display: flex;
