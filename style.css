@@ -156,16 +156,24 @@ body {
   #score .label {
     display: none;
   }
-  #score .value::before {
+  #score .current-score::before {
     content: "Score: ";
   }
-  #score .value {
+  #score .current-score {
     position: absolute;
     top: 0;
     left: 0;
     padding: calc(var(--grid-size) * 10 / 40);
   }
-
+  #score .high-score::before {
+    content: "High Score: ";
+  }
+  #score .high-score {
+      position: absolute;
+    top: calc(var(--grid-size) * 10 / 40 + 0.7em);
+    left: 0;
+    padding: calc(var(--grid-size) * 10 / 40);
+  }
   
   @media (max-width: 600px) {
     :root {

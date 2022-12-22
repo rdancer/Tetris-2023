@@ -19,7 +19,8 @@ const gameBoard = document.getElementById("game-board");
 const startButton = document.getElementById("start-button");
 const pauseButton = document.getElementById("pause-button");
 const dropButton = document.getElementById("drop-button");
-const scoreDisplay = document.getElementById("score-display");
+const currentScoreDisplay = document.getElementById("current-score-display");
+const highScoreDisplay = document.getElementById("high-score-display");
 
 (function maybeDebug() {
     // Show the debug button if the URL contains the #debug hash
@@ -254,7 +255,8 @@ function checkRows() {
             gameBoardArray.splice(y, 1);
             gameBoardArray.unshift(new Array(10).fill(0));
             score++;
-            scoreDisplay.innerHTML = score;
+            maybeSaveHighScore();
+            currentScoreDisplay.innerHTML = score;
             // Remove any existing block elements from the DOM
             while (gameBoard.firstChild) gameBoard.removeChild(gameBoard.firstChild);
         }
@@ -275,9 +277,27 @@ function resetGame() {
         gameBoardArray.push(new Array(10).fill(0));
     }
     score = 0;
-    scoreDisplay.innerHTML = score;
+    currentScoreDisplay.innerHTML = score;
+    updateHighScoreDisplay();
     gameOver = false;
     document.body.classList.remove("game-over");
+}
+
+function updateHighScoreDisplay() {
+    highScoreDisplay.innerHTML = localStorage.getItem("highScore") || 0;
+}
+
+function maybeSaveHighScore() {
+    if (score > localStorage.getItem("highScore")) {
+        localStorage.setItem("highScore", score);
+        // updateHighScoreDisplay();
+    }
+}
+
+// This function is not connected to any UI -- call it manually in the console to reset the high score
+function resetHighScore(value = 0) {
+    localStorage.setItem("highScore", value);
+    updateHighScoreDisplay();
 }
 
 // Draw the game board
