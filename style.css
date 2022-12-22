@@ -121,6 +121,14 @@ body {
     padding: calc(var(--grid-size) * 10 / 40);
     margin-bottom: calc(var(--grid-size) * 4 / 40);
 }
+
+#automate-button {
+  transform: translateY(6em); /* XXX margin-top doesn't work */
+}
+.autopilot-enabled .automate-button .label::before {
+  content: "✅ ";
+}
+
 .button,
 .pause.button .label::after {
     font-size: calc(var(--text-size-medium));

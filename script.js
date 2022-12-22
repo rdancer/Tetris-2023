@@ -21,6 +21,8 @@ const pauseButton = document.getElementById("pause-button");
 const dropButton = document.getElementById("drop-button");
 const currentScoreDisplay = document.getElementById("current-score-display");
 const highScoreDisplay = document.getElementById("high-score-display");
+const autopilotButton = document.getElementById("automate-button");
+const autopilot = new Autopilot(autopilotButton);
 
 (function maybeDebug() {
     // Show the debug button if the URL contains the #debug hash
