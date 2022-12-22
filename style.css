@@ -36,9 +36,7 @@
 #console {
   display: none
 }
-.foo {
-  height: calc( 100% - ((var(--grid-size) * 10 / 40) + var(--text-size-small)) /* footer height */ - (20 * var(--grid-size)) /* #game-board height */ - 15px) /* margin-top */;
-}
+
 .debug #console {
   display: block;
   width: 100%;
