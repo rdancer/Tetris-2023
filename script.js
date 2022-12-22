@@ -284,8 +284,12 @@ function resetGame() {
     document.body.classList.remove("game-over");
 }
 
+function getHighScore() {
+    return localStorage.getItem("highScore") || 0;
+}
+
 function updateHighScoreDisplay() {
-    highScoreDisplay.innerHTML = localStorage.getItem("highScore") || 0;
+    highScoreDisplay.innerHTML = getHighScore();
 }
 
 function maybeSaveHighScore() {
@@ -424,6 +428,29 @@ class Control {
     }
     static rotate() {
         rotatePiece();
+    }
+    static getScore() {
+        return score;
+    }
+    static getBoard() {
+        const board = JSON.parse(JSON.stringify(gameBoardArray));
+        board.forEach(row => row.forEach((value, index) => row[index] = value ? 1 : 0)); // normalise in place
+        return board;
+    }
+    static getPiece() {
+        return JSON.parse(JSON.stringify(currentPiece));
+    }
+    static getHighScore() { return getHighScore(); }
+    static getScore() { return score; }
+    static getState() {
+        const result = {
+            "board": Control.getBoard(),
+            "piece": Control.getPiece(),
+            "score": score,
+            "highScore": getHighScore(),
+            "isGameOver": isGameOver(),
+        }
+        return result;
     }
 }
 
