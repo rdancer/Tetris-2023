@@ -88,7 +88,6 @@ body {
   }
 #game-container {
   position: relative;
-  width: calc(10 * var(--grid-size));
 }
 #game-board,
 .board-overlay {
