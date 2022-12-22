@@ -4,7 +4,7 @@ class Autopilot {
             let htmlClasses = document.querySelector('html').classList;
             htmlClasses.toggle('autopilot-enabled');
             if (htmlClasses.contains('autopilot-enabled')) {
-                this.startAutopilot();
+                this.maybeLoadScript(() => this.startAutopilot());
             } else {
                 this.stopAutopilot();
             }
@@ -16,5 +16,17 @@ class Autopilot {
     }
     stopAutopilot() {
         console.log("Autopilot stopping... ... not implemented.");
+    }
+    maybeLoadScript(callback) {
+        if (!this.scriptLoaded) {
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@2.6.0/dist/tf.min.js';
+            document.head.appendChild(script);
+
+            script.onload = function () {
+                callback();
+            };
+            this.scriptLoaded = true;
+        }
     }
 }
