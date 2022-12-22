@@ -115,6 +115,7 @@ body {
 }
 
 .button {
+    min-height: 44px;
     width: 100%;
     background-color: blue;
     color: var(--off-white);
@@ -271,3 +272,11 @@ footer a:hover {
 footer a:link{color:inherit}
 footer a:active{color:inherit}
 footer a:visited{color:inherit}
+
+/* disable text selection on the entire page */
+body {
+  -webkit-user-select: none;  /* Webkit (Safari, Chrome) */
+  -moz-user-select: none;     /* Mozilla Firefox */
+  -ms-user-select: none;      /* Internet Explorer/Edge */
+  user-select: none;          /* Standard syntax */
+}
