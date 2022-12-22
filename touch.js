@@ -93,14 +93,14 @@ function TranslateTouchEventsToSyntheticKeyboardEvents(gameBoard) {
                     break;
                 case 'up':
                     movedUp++;
-                    Control.up();
+                    Control.rotate();
                     break;
                 case 'down':
                     movedDown++;
                     Control.down();
                     break;
                 case 'space':
-                    Control.space();
+                    Control.drop();
                     break;
             }
             drawPiece();
@@ -112,7 +112,7 @@ function TranslateTouchEventsToSyntheticKeyboardEvents(gameBoard) {
         this.dropButton.addEventListener("click", (event) => {
             event.preventDefault()
             event.target.blur() // lest the <Space> keypress that we use to drop the current piece depresses the button *facepalm*
-            Control.space();
+            Control.drop();
         });
         document.querySelector('html').classList.add('touchscreen');
     } else {

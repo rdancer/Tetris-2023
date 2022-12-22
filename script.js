@@ -328,7 +328,7 @@ function fallenBlockExistsAtPosition(x, y) {
 document.addEventListener("keydown", event => {
     switch (event.keyCode) {
         case 32: // Space
-            Control.space();
+            Control.drop();
             break;        
         case 37: // Left arrow
             Control.left();
@@ -340,7 +340,7 @@ document.addEventListener("keydown", event => {
             Control.down()
             break;
         case 38: // Up arrow
-            Control.up();
+            Control.rotate();
             break;
     }
     drawPiece();
@@ -402,7 +402,7 @@ startButton.addEventListener("click", (event) => {
 });
 
 class Control {
-    static space() {
+    static drop() {
         while (canMoveDown()) {
             movePieceDown();
         }
@@ -422,7 +422,7 @@ class Control {
             movePieceDown();
         }
     }
-    static up() {
+    static rotate() {
         rotatePiece();
     }
 }
