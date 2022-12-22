@@ -92,7 +92,6 @@ body {
     position: absolute;
     left: 0;
     top: 0;
-    display:none;
     background: rgba(0,0,0,0) !important;
 }
   #game-board {
@@ -189,7 +188,7 @@ body {
   }
   #game-over {
     z-index: 2;
-    background-color: rgba(0, 0, 0, 61%);
+    background-color: rgba(0, 0, 0, 61%) !important;
     display: none;
   }
   .game-over #game-over {
