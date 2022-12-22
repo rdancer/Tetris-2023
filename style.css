@@ -83,9 +83,11 @@ body {
     height: calc(20 * var(--grid-size));
     border-radius: calc(var(--grid-size) * 0.5);
   }
+  .board-overlay {
+    pointer-events: none;
+  }
 #game-container {
   position: relative;
-  width: calc(10 * var(--grid-size));
 }
 #game-board,
 .board-overlay {
@@ -112,6 +114,7 @@ body {
 }
 
 .button {
+    min-height: 44px;
     width: 100%;
     background-color: blue;
     color: var(--off-white);
@@ -190,6 +193,7 @@ body {
     z-index: 2;
     background-color: rgba(0, 0, 0, 61%) !important;
     display: none;
+    pointer-events: auto; /* obscure the board */
   }
   .game-over #game-over {
     display: block;
@@ -267,3 +271,11 @@ footer a:hover {
 footer a:link{color:inherit}
 footer a:active{color:inherit}
 footer a:visited{color:inherit}
+
+/* disable text selection on the entire page */
+body {
+  -webkit-user-select: none;  /* Webkit (Safari, Chrome) */
+  -moz-user-select: none;     /* Mozilla Firefox */
+  -ms-user-select: none;      /* Internet Explorer/Edge */
+  user-select: none;          /* Standard syntax */
+}
