@@ -119,7 +119,7 @@ document.addEventListener('DOMContentLoaded', function () {
         document.querySelector('html').classList.add('touchscreen'); // Ideally we would like to do this as early as possible, so that the CSS can take effect, and we don't have jumpy UI...
     } else {
         document.querySelector('html').classList.add('no-touchscreen'); // ... but we still have jumpy UI, so hide the Autopilot button at first, and dispay it here
-        Console.log("touchscreen is not supported");
+        console.log("touchscreen is not supported");
     }
 });
 

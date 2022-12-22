@@ -3,11 +3,11 @@ all: browser server
 
 .PHONY: server
 server:
-	python3 ./http-server.py 8000
+	python3 ./http-server.py 8888
 
 .PHONY: browser
 browser:
-	open http://localhost:8000/
+	open http://localhost:8888/
 
 
 .PHONY: prompt
