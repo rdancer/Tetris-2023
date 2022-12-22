@@ -59,10 +59,14 @@
   outline: 3px dashed black;
 }
 
-#debug-button:not(.visible) {
+#debug-button:not(.visible),
+#drop-button:not(.visible) {
   display: none;
 }
 #debug-button.visible {
+  display: block;
+}
+.touchscreen #drop-button {
   display: block;
 }
 body {

@@ -18,7 +18,6 @@ function gridSize() {
 const gameBoard = document.getElementById("game-board");
 const startButton = document.getElementById("start-button");
 const pauseButton = document.getElementById("pause-button");
-const dropButton = document.getElementById("drop-button");
 const currentScoreDisplay = document.getElementById("current-score-display");
 const highScoreDisplay = document.getElementById("high-score-display");
 const autopilotButton = document.getElementById("automate-button");
@@ -401,17 +400,6 @@ startButton.addEventListener("click", (event) => {
     drawPiece();
     gameInterval = setInterval(gameLoop, 1000);
 });
-
-dropButton.addEventListener("click", (event) => {
-    event.preventDefault()
-    event.target.blur() // lest the <Space> keypress that we use to drop the current piece depresses the button *facepalm*
-    //startButton.style.display = "none";
-    while (canMoveDown()) {
-        movePieceDown();
-    }
-    drawPiece();
-});
-
 
 class Control {
     static space() {
