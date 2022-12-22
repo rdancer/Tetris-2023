@@ -39,11 +39,11 @@ class Control:
         self.browser_open = True
 
     def __enter__(self):
-        print("entering Control")
+        # print("entering Control")
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        print("exiting Control")
+        # print("exiting Control")
         if self.browser_open:
             self.browser.close()
             self.browser_open = False
@@ -73,6 +73,11 @@ class Control:
         # Evaluate JavaScript to get the current state of the game.
         state = self.page.evaluate("Control.getState()")
         return state
+    
+    def get_piece(self):
+        # Evaluate JavaScript to get the current piece.
+        piece = self.page.evaluate("Control.getPiece()")
+        return piece
 
     def get_score(self):
         # Evaluate JavaScript to get the current score.
@@ -83,3 +88,7 @@ class Control:
         # Evaluate JavaScript to get the high score.
         high_score = self.page.evaluate("Control.getHighScore()")
         return high_score
+
+    def new_game(self):
+        # Evaluate JavaScript to start a new game.
+        self.page.evaluate("Control.newGame()")

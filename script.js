@@ -396,11 +396,7 @@ function Piece(piece) {
 startButton.addEventListener("click", (event) => {
     event.preventDefault()
     event.target.blur() // lest the <Space> keypress that we use to drop the current piece depresses the button *facepalm*
-    //startButton.style.display = "none";
-    resetGame();
-    createPiece();
-    drawPiece();
-    gameInterval = setInterval(gameLoop, 1000);
+    Control.newGame();
 });
 
 class Control {
@@ -449,6 +445,12 @@ class Control {
             "isGameOver": isGameOver(),
         }
         return result;
+    }
+    static newGame() {
+        resetGame();
+        createPiece();
+        drawPiece();
+        gameInterval = setInterval(gameLoop, 1000);
     }
 }
 
