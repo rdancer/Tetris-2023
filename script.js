@@ -18,7 +18,6 @@ function gridSize() {
 const gameBoard = document.getElementById("game-board");
 const startButton = document.getElementById("start-button");
 const pauseButton = document.getElementById("pause-button");
-const rotateButton = document.getElementById("rotate-button");
 const dropButton = document.getElementById("drop-button");
 const scoreDisplay = document.getElementById("score-display");
 
@@ -379,14 +378,6 @@ startButton.addEventListener("click", (event) => {
     createPiece();
     drawPiece();
     gameInterval = setInterval(gameLoop, 1000);
-});
-
-rotateButton.addEventListener("click", (event) => {
-    event.preventDefault()
-    event.target.blur() // lest the <Space> keypress that we use to drop the current piece depresses the button *facepalm*
-    //startButton.style.display = "none";
-    rotatePiece();
-    drawPiece();
 });
 
 dropButton.addEventListener("click", (event) => {

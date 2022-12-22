@@ -83,6 +83,9 @@ body {
     height: calc(20 * var(--grid-size));
     border-radius: calc(var(--grid-size) * 0.5);
   }
+  .board-overlay {
+    pointer-events: none;
+  }
 #game-container {
   position: relative;
   width: calc(10 * var(--grid-size));
@@ -92,7 +95,6 @@ body {
     position: absolute;
     left: 0;
     top: 0;
-    display:none;
     background: rgba(0,0,0,0) !important;
 }
   #game-board {
@@ -189,8 +191,9 @@ body {
   }
   #game-over {
     z-index: 2;
-    background-color: rgba(0, 0, 0, 61%);
+    background-color: rgba(0, 0, 0, 61%) !important;
     display: none;
+    pointer-events: auto; /* obscure the board */
   }
   .game-over #game-over {
     display: block;

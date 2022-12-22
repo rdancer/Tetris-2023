@@ -9,24 +9,30 @@ function TranslateTouchEventsToSyntheticKeyboardEvents(gameBoard) {
         consoleDiv.lastChild.scrollIntoView();
     };
 
-    let startX = 0;
-    let startY = 0;
-    let movedRight = 0;
-    let movedLeft = 0;
-    let movedUp = 0;
-    let movedDown = 0;
-    let swipeDetected = false;
+    let startX;
+    let startY;
+    let movedRight;
+    let movedLeft;
+    let movedUp;
+    let movedDown;
+    let swipeDetected;
 
     // Set up event listeners for all touch events
     gameBoard.addEventListener("touchstart", function (event) {
         console.log(event.type, "x:", event.touches[0].clientX, "y:", event.touches[0].clientY);
         startX = event.touches[0].clientX;
         startY = event.touches[0].clientY;
+        movedRight = 0;
+        movedLeft = 0;
+        movedUp = 0;
+        movedDown = 0;
         swipeDetected = false;
     });
 
 
     // Listen for swipe events on the game board element
+
+    // Maybe it's a swipe
     gameBoard.addEventListener("touchmove", function (event) {
         console.log("Swiped", "startX:", startX, "x:", event.touches[0].clientX, "offsetX:", event.touches[0].clientX - startX, "startY:", startY, "y:", event.touches[0].clientY, "offsetY:", event.touches[0].clientY - startY);
         swipeDetected = true;
@@ -34,46 +40,26 @@ function TranslateTouchEventsToSyntheticKeyboardEvents(gameBoard) {
         touchMove(event.touches[0].clientX, event.touches[0].clientY);
     });
 
-    gameBoard.addEventListener("touchend", function (event) {
-        setTimeout(200, function () {
-            swipeDetected = false;
-        });
-    });
-
-    let doubleTapTimeout;
-
-    // Listen for tap events on the game board element
+    // If it is not a swipe, maybe it's a tap
     gameBoard.addEventListener("touchend", function (event) {
         // Generate a synthetic spacebar event if no swipe was detected
         if (!swipeDetected) {
-            if (doubleTapTimeout) {
-                console.log("...Double tapped");
-                clearTimeout(doubleTapTimeout);
-                doubleTapTimeout = null;
-                translateTouchGesturesToPieceMove("space");
-            } else {
-                console.log("Either tapped or double tapped...");
-                doubleTapTimeout = setTimeout(200, function () {
-                    console.log("...Tapped");
-                    doubleTapTimeout = null;
-                    translateTouchGesturesToPieceMove("up");
-                });
-            }
-        }
-        // cancel timeout doubleTapTimeout
+            translateTouchGesturesToPieceMoves("up");
+        };
+        swipeDetected = false;
     });
 
     function touchMove(x, y) {
         // Get the grid size
         const _gridSize = gridSize();
 
-        // Get the X and Y components of the vector difference
-        const xDiff = Math.round((x - startX) / _gridSize),
-            yDiff = Math.round((y - startY) / _gridSize);
+        // Get the number of grid squares the swipe is displaced horizontally and vertically
+        const xGridDiff = Math.round((x - startX) / _gridSize),
+            yGridDiff = Math.round((y - startY) / _gridSize);
 
-        console.log("xDiff:", xDiff, "y:", y, ":yDiff", yDiff, y / _gridSize, "gridSize", _gridSize)
+        console.log("xGridDiff:", xGridDiff, "y:", y, "yGridDiff:", yGridDiff, "gridSize:", _gridSize)
         // Subtract the movedRight counter and add the movedLeft counter
-        const xMovement = xDiff - movedRight + movedLeft;
+        const xMovement = xGridDiff - movedRight + movedLeft;
 
         // If the result is negative n, send n left-arrow synthetic keyboard events
         if (xMovement < 0) {
@@ -89,40 +75,36 @@ function TranslateTouchEventsToSyntheticKeyboardEvents(gameBoard) {
         // const yMovement = Math.abs(yDiff);
         // if (yMovement > 1) {
         //     console.log(`translateTouchGesturesToPieceMoves("up")`);
-        //     translateTouchGesturesToPieceMove("up");
+        //     translateTouchGesturesToPieceMoves("up");
         // }
     }
 
-    function translateTouchGesturesToPieceMoves(key, numEvents) {
-        // Generate numEvents synthetic keyboard events of the specified key
+    function translateTouchGesturesToPieceMoves(key, numEvents = 1) {
         for (let i = 0; i < numEvents; i++) {
-            translateTouchGesturesToPieceMove(key);
+            console.log("translating move:", key);
+            switch (key) {
+                case 'left':
+                    movedLeft++;
+                    Control.left();
+                    break;
+                case 'right':
+                    movedRight++;
+                    Control.right();
+                    break;
+                case 'up':
+                    movedUp++;
+                    Control.up();
+                    break;
+                case 'down':
+                    movedDown++;
+                    Control.down();
+                    break;
+                case 'space':
+                    Control.space();
+                    break;
+            }
+            drawPiece();
         }
-    }
-
-    function translateTouchGesturesToPieceMove(key) {
-        switch (key) {
-            case 'left':
-                movedLeft++;
-                Control.left();
-                break;
-            case 'right':
-                movedRight++;
-                Control.right();
-                break;
-            case 'up':
-                movedUp++;
-                Control.up();
-                break;
-            case 'down':
-                movedDown++;
-                Control.down();
-                break;
-            case 'space':
-                Control.space();
-                break;
-        }
-        drawPiece();
     }
 
     console.log("Touch events to synthetic keyboard events translation enabled.");
