@@ -24,9 +24,15 @@ class Autopilot {
             document.head.appendChild(script);
 
             script.onload = function () {
-                callback();
+                this.loadModel(callback);
             };
             this.scriptLoaded = true;
         }
     }
+    loadModel(callback) {
+        const model = await tf.loadGraphModel('ml/autopilot-model.json');
+        callback();
+    }
+}
+      
 }
