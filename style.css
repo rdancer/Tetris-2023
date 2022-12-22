@@ -69,6 +69,11 @@
 .touchscreen #drop-button {
   display: block;
 }
+
+/* fix: prevent UI flicker */
+#automate-button { display: none; }
+.touchscreen #automate-button, .no-touchscreen #automate-button { display: block; }
+
 body {
     overflow: hidden;
     display: flex;

@@ -1,4 +1,4 @@
-function TranslateTouchEventsToSyntheticKeyboardEvents(gameBoard) {
+function Touch(gameBoard) {
     // log to #console on mobile devices
     console._log = console.log;
     console.log = function () {
@@ -106,7 +106,9 @@ function TranslateTouchEventsToSyntheticKeyboardEvents(gameBoard) {
             drawPiece();
         }
     }
+}
 
+document.addEventListener('DOMContentLoaded', function () {
     if (navigator.maxTouchPoints > 0) {
         this.dropButton = document.getElementById("drop-button");
         this.dropButton.addEventListener("click", (event) => {
@@ -114,10 +116,11 @@ function TranslateTouchEventsToSyntheticKeyboardEvents(gameBoard) {
             event.target.blur() // lest the <Space> keypress that we use to drop the current piece depresses the button *facepalm*
             Control.drop();
         });
-        document.querySelector('html').classList.add('touchscreen');
+        document.querySelector('html').classList.add('touchscreen'); // Ideally we would like to do this as early as possible, so that the CSS can take effect, and we don't have jumpy UI...
     } else {
+        document.querySelector('html').classList.add('no-touchscreen'); // ... but we still have jumpy UI, so hide the Autopilot button at first, and dispay it here
         Console.log("touchscreen is not supported");
     }
+});
 
-    console.log("Touch events to synthetic keyboard events translation enabled.");
-}
+console.log("Touch control enabled.");

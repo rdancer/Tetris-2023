@@ -1,9 +1,9 @@
 
 // Start the game automatically after the page has loaded
-// and enable touch events
+// and enable touch event handling
 window.onload = function() {
     startButton.click()
-    TranslateTouchEventsToSyntheticKeyboardEvents(gameBoard);
+    Touch(gameBoard);
 }
 
 
@@ -38,8 +38,6 @@ const autopilot = new Autopilot(autopilotButton);
         document.querySelector('html').classList.toggle('debug');
     });
 })();
-
-//new TranslateTouchEventsToSyntheticKeyboardEvents(gameBoard)
 
 const pieceTypes = ["I", "O", "T", "S", "Z", "J", "L"];
 

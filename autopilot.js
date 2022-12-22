@@ -17,22 +17,23 @@ class Autopilot {
     stopAutopilot() {
         console.log("Autopilot stopping... ... not implemented.");
     }
-    maybeLoadScript(callback) {
+    async maybeLoadScript(callback) {
         if (!this.scriptLoaded) {
             const script = document.createElement('script');
             script.src = 'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@2.6.0/dist/tf.min.js';
             document.head.appendChild(script);
 
-            script.onload = function () {
-                this.loadModel(callback);
+            script.onload = async () => {
+                await this.loadModel();
+                callback();
             };
             this.scriptLoaded = true;
+        } else {
+            callback();
         }
     }
-    loadModel(callback) {
+    async loadModel() {
         const model = await tf.loadGraphModel('ml/autopilot-model.json');
-        callback();
+        console.log("Model loaded");
     }
-}
-      
 }
