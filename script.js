@@ -23,6 +23,8 @@ const highScoreDisplay = document.getElementById("high-score-display");
 const autopilotButton = document.getElementById("automate-button");
 const autopilot = new Autopilot(autopilotButton);
 
+let tickInterval = 1000;
+
 (function maybeDebug() {
     // Show the debug button if the URL contains the #debug hash
     // The debug button toggles debugging features
@@ -111,7 +113,8 @@ function createPiece() {
         type: type,
         x: 4,
         y: 0,
-        shape: pieces[type].shape
+        shape: pieces[type].shape,
+        rotation: 0
     };
     // Check if the new piece collides with any other piece and move it upwards if it does
     while (!checkCollision(currentPiece.shape)) {
@@ -175,6 +178,7 @@ function rotatePiece() {
     newShape = flip(newShape);
     if (checkCollision(newShape)) {
         currentPiece.shape = newShape;
+        currentPiece.rotation = (currentPiece.rotation + 1) % 4;
     }
     drawPiece();
 }
@@ -450,7 +454,14 @@ class Control {
         resetGame();
         createPiece();
         drawPiece();
-        gameInterval = setInterval(gameLoop, 1000);
+        gameInterval = setInterval(gameLoop, tickInterval);
+    }
+    static isGameOver() { return isGameOver(); }
+    static getTick() { return tickInterval; }
+    static setTick(newTick) {
+        tickInterval = newTick;
+        clearInterval(gameInterval);
+        gameInterval = setInterval(gameLoop, tickInterval);
     }
 }
 

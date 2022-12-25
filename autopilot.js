@@ -12,10 +12,44 @@ class Autopilot {
         console.log("Autopilot loaded");
     }
     startAutopilot() {
-        console.log("Autopilot starting... ... not implemented.");
+        console.log("Autopilot starting...");
+        this.autopilot = true;
+
+        while (this.autopilot) {
+            // Get the current state of the game.
+            const state = Control.getState();
+
+            // Use the model to predict the best action.
+            const action = model.predict(state);
+
+            // Take the action.
+            switch (action) {
+                case 0:
+                    Control.left();
+                    break;
+                case 1:
+                    Control.right();
+                    break;
+                case 2:
+                    Control.down();
+                    break;
+                case 3:
+                    Control.rotate();
+                    break;
+                case 4:
+                    Control.drop();
+                    break;
+            }
+
+            // Restart the game if it is over.
+            if (Control.gameOver()) {
+                Control.newGame();
+            }
+        }
     }
     stopAutopilot() {
-        console.log("Autopilot stopping... ... not implemented.");
+        this.autopilot = false;
+        console.log("Autopilot paused.");
     }
     async maybeLoadScript(callback) {
         if (!this.scriptLoaded) {

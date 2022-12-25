@@ -1,17 +1,18 @@
 # tetris_control.py -- This module contains the code for interacting with the Tetris game using Playwright for Python. It defines a Control class that provides methods for taking actions in the game. The Control class proxies python code to the JavaScript code runningthe Tetris game in the browser.
 import time
 import argparse
+import os
 from playwright.sync_api import sync_playwright
 
 
-# If URL was provided as a command line argument, use it.
+# If the --url argument is not provided, the script will exit with a helpful error message.
 parser = argparse.ArgumentParser()
-parser.add_argument("--url", type=str, default="https://rdancer.github.io/Tetris-2023/", help="URL to process")
+parser.add_argument("--url", required=True, help="URL of the server")
 args = parser.parse_args()
 url = args.url
 
 
-class Control:
+class control:
     def __init__(self):
         self.browser = None
         self.page = None
@@ -32,22 +33,26 @@ class Control:
         # Wait for the page to load
         self.page.wait_for_selector('#game-container')
 
-        # Wait for 5 seconds to allow all the scripts to load and the game to start
-        # time.sleep(5)
+        # Wait to allow all the scripts to load and the game to start
+        time.sleep(2)
+
+        # Get the piece types from the bowels of the JavaScript code.
+        self.piece_types = self.page.evaluate("pieceTypes")
 
         # Set the flag to indicate that the browser is open
         self.browser_open = True
 
+
     def __enter__(self):
-        # print("entering Control")
+        print("entering Control")
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        # print("exiting Control")
-        if self.browser_open:
-            self.browser.close()
-            self.browser_open = False
-        self.playwright.stop()
+        print("exiting Control")
+        # if self.browser_open:
+        #     self.browser.close()
+        #     self.browser_open = False
+        # self.playwright.stop()
 
     def left(self):
         # Evaluate JavaScript to call the left method on the Control class.
@@ -71,7 +76,7 @@ class Control:
 
     def get_state(self):
         # Evaluate JavaScript to get the current state of the game.
-        state = self.page.evaluate("Control.getState()")
+        state = self.page.evaluate("Control.getState()") # doesn't exist?? WTF
         return state
     
     def get_piece(self):
@@ -92,3 +97,13 @@ class Control:
     def new_game(self):
         # Evaluate JavaScript to start a new game.
         self.page.evaluate("Control.newGame()")
+
+    def get_tick(self):
+        # Evaluate JavaScript to get the current tick.
+        tick = self.page.evaluate("Control.getTick()")
+        return tick
+
+    def set_tick(self, tick):
+        # Evaluate JavaScript to set the current tick.
+        self.page.evaluate("Control.setTick(%d)" % tick)
+
