@@ -229,10 +229,12 @@ def train_model(model):
     print ("Model summary:", model.summary(), model.input_shape, model.output_shape)
 
     # Choose an action.
-    actionChoice = np.argmax(model.predict(np_boards_after)[0])
+    bestChoices = np.nanargmax(model.predict(np_boards_after)[0])
     print ("XXXXXXXX ignore the model's choice of action for now and do the one that got the biggest Reward XXXXXXXXXX")
-    actionChoice = np.argmax(rewards)
-    
+    bestChoices = np.nanargmax(rewards)
+    # choose random from bestChoices
+    actionChoice = np.random.choice(bestChoices)
+
     # Take the action.
     motion = possible_plays[actionChoice]["motion"]
     myMove.perform_motion(motion)
