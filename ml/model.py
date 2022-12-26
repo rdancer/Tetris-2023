@@ -7,6 +7,7 @@ import numpy as np
 import time
 from tetris_control import control as ctrl
 from reward import Reward
+from move import Move
 
 MODEL_FILE_NAME = "autopilot-model.h5"
 NUM_ITERATIONS = 42
@@ -142,17 +143,16 @@ def create_model():
 
 def create_model_XXX_DNW():
   """Create the model."""
-  state_encoded_shape = encode_state(get_state()).shape
   # Define the model
-  myInput = tf.keras.layers.Input(shape=state_encoded.shape)  # 2D array input layer
+  myInput = tf.keras.layers.Input(40) # 1 input per rotation x column
 
   # Reshape the input tensor to the desired shape
-  reshaped_input = tf.keras.layers.Reshape((-1,))(myInput)
+  # reshaped_input = tf.keras.layers.Reshape((-1,))(myInput)
 
-  print("input shape: " + str(reshaped_input.shape))
+  # print("input shape: " + str(reshaped_input.shape))
 
   # Add hidden layers with the desired number of units and activation function
-  dense1 = tf.keras.layers.Dense(64, activation='relu')(reshaped_input)
+  dense1 = tf.keras.layers.Dense(64, activation='relu')(myInput)
   dense2 = tf.keras.layers.Dense(64, activation='relu')(dense1)
 
   # Add the output layer with the desired number of units and activation function
@@ -164,7 +164,20 @@ def create_model_XXX_DNW():
 
   return model
 
+def create_constant_model():
+  """Create a dummy model that always returns a constant value."""
+  myInput = tf.keras.layers.Input(shape=(20,10))  # 2D array input layer
+  # Create a constant tensor with the desired shape
+  output = tf.constant([[24]], dtype=tf.float32)
 
+  # Create a Lambda layer that wraps the constant tensor and returns it as the output
+  output_layer = tf.keras.layers.Lambda(lambda x: output)(myInput)
+
+  # Define the model with the Lambda layer as the output
+  model = tf.keras.Model(inputs=myInput, outputs=output_layer)
+  model.compile(optimizer='adam', loss='mse')
+
+  return model
 
 def train_model(model):
   # Track the elapsed time.
@@ -178,26 +191,50 @@ def train_model(model):
     state_encoded = encode_state(state)
     print("encoded state: " + str(state_encoded))
     piece = state["piece"]
-    actions = get_actions()
+
+    # Get all the possible plays.
+    myMove = Move(control)
+    possible_plays = myMove.all_possible_end_states()
+    print ("possible_plays:", len(possible_plays))
+    boards_after = [play["board_after"] for play in possible_plays]
+    print ("boards_after:", len(boards_after))
+    _boards = []
+    for board in boards_after:
+      print("board type:", type(board))
+      # if board is NoneType, then it's a bad board and we should skip it
+      if board is None:
+        print("XXXXXXXXXXXXX board is None and not good XXXXXXXXXXXXXXX")
+        print("substituting a dummy board for now")
+        # Create a dummy board XXX this is really bad
+        board = [[0 for x in range(10)] for y in range(20)]
+        _boards.append(board)
+        continue
+      print("board[0] type:", type(board[0]))
+      print("board shape: " + str(len(board)) + " x " + str(len(board[0])))
+      _boards.append(board)
+    boards_after = _boards
+    np_boards_after = np.array([np.array(board) for board in _boards])
+    rewards = [Reward(state, board).get_reward() for board in boards_after]
+    batch_size = len(rewards) # 40
+    rewards = np.array(rewards)
+    rewards = rewards.reshape((batch_size, 1)) # Fixes: Incompatible shapes: [39,20,5] vs. [39]
+
 
     # Choose an action.
-    actionChoice = np.argmax(model.predict(state_encoded)[0])
+    actionChoice = np.argmax(model.predict(np_boards_after)[0])
 
     # note: only call the model summary after the model has been instantiated
     print ("Model summary:", model.summary(), model.input_shape, model.output_shape)
     
     # Take the action.
-    action = actions[actionChoice]
-    action()
+    motion = possible_plays[actionChoice]["motion"]
+    myMove.perform_motion(motion)
 
     time.sleep(control.get_tick()/1000.0) # as long as we wait at least a tick, the reward should be close enough
-    next_state = get_state()
-    reward = Reward(state, next_state, piece, action).get_reward()
-    reward_encoded = np.zeros(len(actions) +2)
-    reward_encoded[actionChoice] = reward
 
     # Update the model.
-    model.fit(state_encoded, reward_encoded, epochs=1)
+
+    model.fit(np_boards_after, rewards, epochs=1, batch_size=batch_size)
 
 
     # Save the model to the file every minute.
@@ -221,7 +258,8 @@ def main():
       print("Loaded model from file " + MODEL_FILE_NAME)
     else:
       # Define the model.
-      model = create_model()
+      # model = create_model()
+      model = create_constant_model()
 
 
     control.set_tick(TICK)

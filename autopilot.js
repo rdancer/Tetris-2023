@@ -23,23 +23,26 @@ class Autopilot {
             const action = model.predict(state);
 
             // Take the action.
-            switch (action) {
-                case 0:
-                    Control.left();
-                    break;
-                case 1:
-                    Control.right();
-                    break;
-                case 2:
-                    Control.down();
-                    break;
-                case 3:
-                    Control.rotate();
-                    break;
-                case 4:
-                    Control.drop();
-                    break;
+            // Action is 0..39, in the form rotation * position
+            const position = action % 4;
+            const rotation = Math.floor(action / 10);
+
+            // we don't know what the position of the piece should be, because of left offset of the piece shape, and we are a bit lazy, so what we do is to first rotate the piece, then move *all the way* to the first column, and then we can just move to the right by `position` steps
+
+            // XXX FIXME this is visually quite unappealing, because the piece just jumps to the new position; we shold make it more cinematic, by rotating and moving the piece one step at a time, and only as necessary
+
+            for (let i = 0; i < rotation; i++) {
+                Control.rotate();
             }
+            for (let i = 0; i < 9; i++) {
+                Control.left();
+            }
+            for (let i = 0; i < position; i++) {
+                Control.right();
+            }
+
+            // Optionally drop the piece.
+            //Control.drop();
 
             // Restart the game if it is over.
             if (Control.gameOver()) {

@@ -2,14 +2,56 @@
  
 
 class Reward:
-    def __init__(self, beforeState, afterState, piece, action):
+    def __init__(self, beforeState, board_after):
         # Compute the reward for the given state transition.
         self.beforeState = beforeState
-        self.afterState = afterState
-        self.piece = piece
-        self.action = action
+        self.board_after = board_after
+        print("Reward: board_after: ", board_after)
+        self.num_completed_rows, self.board_after_cleared = self.clear_rows(board_after)
+        self.score_after = self.beforeState["score"] + self.num_completed_rows
+        self.high_score_after = max(self.beforeState["highScore"], (self.score_after - self.beforeState["score"]))
+        # return self # TypeError: __init__() should return None, not 'Reward'
     
+    def clear_rows(self, board):
+        """Clear any rows that are full and return the number of cleared rows."""
+        if board is None:
+            return 0, None
+
+        # Initialize a variable to store the number of cleared rows.
+        num_cleared_rows = 0
+
+        # Iterate over the rows of the board, starting from the top.
+        for i in range(len(board)):
+            row = board[i]
+            # If the row is full (contains only non-zero cells), clear the row.
+            if all(cell != 0 for cell in row):
+                # Clear the row.
+                board[i] = [0] * len(row)
+
+                # Increment the number of cleared rows.
+                num_cleared_rows += 1
+
+        # If any rows were cleared, shift the remaining rows down.
+        if num_cleared_rows > 0:
+            # Shift the remaining rows down.
+            board = self._shift_rows_down(board, num_cleared_rows)
+
+        # Return the number of cleared rows and the new board.
+        return num_cleared_rows, board
+
+
+    def _shift_rows_down(self, board, num_rows):
+        """Prepend the given number of empty rows to the board."""
+        new_board = []
+        for i in range(num_rows):
+            new_board.append([0] * len(board[0]))
+        for row in board:
+            new_board.append(row)
+        return new_board
+
+
     def last_empty_row(self, board):
+        """Return the index of the last empty row in the board."""
         # Initialize a variable to store the count of empty rows.
         count_empty_rows = 0
 
@@ -26,6 +68,7 @@ class Reward:
         return count_empty_rows ** 2
 
     def row_fill_fractions(self, board):
+        """Return a list of the fill fractions for each row in the board. It really returns fill *ratio*, i.e. the ratio of filled cells not to total cells, but to *unfilled* cells, which makes it grow non-linearly. We do this because holes are a pain in the neck, and we want to incentivise filling them."""
         # Define the sparsity values for the different number of occupied cells.
         sparsity_values = [0, 0.1111111111111111, 0.25, 0.42857142857142855, 0.6666666666666666, 1, 1.5, 2.3333333333333335, 4, 9, 100] # [0/10, 1/9, 2/8, 3/7, 4/6, 5/5, 6/4, 7/3, 8/2, 9/1, 100]
 
@@ -47,6 +90,7 @@ class Reward:
 
   
     def board_fill_fraction(self, board):
+        """Return the fill fraction of the board, i.e. how many filled cells vs how many empty cells the board has."""
         # Count the number of occupied cells in the board.
         occupied_cells = sum(sum(row) for row in board)
 
@@ -56,39 +100,18 @@ class Reward:
         return fill_fraction
 
 
-    def pieceHasMoved(self):
-        # Check if the piece has moved.
-        yMove = self.piece["y"] - self.beforeState["piece"]["y"]
-        if yMove > 0:
-            return yMove
-        else:
-            return 0
-
-
-    def distance_from_gap(self, state):
-        assert(False) # unimplemented
-        # Get the coordinates of the tetromino.
-        tetromino_coords = get_tetromino_coords(state)
-
-        # Get the coordinates of the gap in the line.
-        gap_coords = get_gap_coords(state)
-
-        # Calculate the distance between the tetromino and the gap.
-        distance = calc_distance(tetromino_coords, gap_coords)
-
-        return distance
-
-
     def get_reward(self):
+        if self.board_after is None:
+             return -42 # Do not do this move at all
         # Compute the reward for the given state transition.
         # Initialize a variable to store the reward.
         reward = 0
-        reward += self.last_empty_row(self.afterState["board"]) - self.last_empty_row(self.beforeState["board"])
-        reward += sum(self.row_fill_fractions(self.afterState["board"])) - sum(self.row_fill_fractions(self.beforeState["board"]))
-        reward += self.board_fill_fraction(self.afterState["board"]) - self.board_fill_fraction(self.beforeState["board"])
-        reward += self.pieceHasMoved()
-        reward += self.afterState["score"] - self.beforeState["score"]
-        reward += self.afterState["highScore"] - self.beforeState["highScore"]
+        reward += self.last_empty_row(self.board_after_cleared) - self.last_empty_row(self.beforeState["board"])
+        reward += sum(self.row_fill_fractions(self.board_after_cleared)) - sum(self.row_fill_fractions(self.beforeState["board"]))
+        reward += self.board_fill_fraction(self.board_after_cleared) - self.board_fill_fraction(self.beforeState["board"])
+        reward += self.score_after - self.beforeState["score"]
+        reward += self.high_score_after - self.beforeState["highScore"]
+        reward += self.num_completed_rows ** 1.5 * 100 # really juicy, and gets more juicier the more row we clear at a time
 
         return reward
 
