@@ -1,6 +1,7 @@
 # model.py -- This module contains the code for training and using a reinforcement learning model to play Tetris. It defines a Model class that defines the model and provides methods for training and using the model to take actions in the game.
 
 import os
+import sys
 import tensorflow as tf
 from tensorflow.keras.layers import Input, concatenate, Dense, Flatten, Conv2D, MaxPooling2D, Dropout
 import numpy as np
@@ -15,6 +16,21 @@ TICK = 100 # milliseconds
 
 
 control = None # global object to control the game
+
+
+class stdout_redirected(object):
+    def __init__(self, to="/dev/null"):
+        self.to = to
+
+    def __enter__(self):
+        self.sys_stdout = sys.stdout
+        sys.stdout = open(self.to, 'w')
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        sys.stdout.close()
+        sys.stdout = self.sys_stdout
+
+
 
 # Define the state space.
 def get_state():
@@ -85,7 +101,7 @@ def foobar():
   # concatenate the board and the combined array
   returnArray = np.hstack((board, combinedArray))
 
-  print("returnArray shape: " + str(returnArray.shape))
+  # print("returnArray shape: " + str(returnArray.shape))
 
   return returnArray
 
@@ -186,39 +202,42 @@ def train_model(model):
   # Train the model.
   gamesRemaining = NUM_ITERATIONS
   while gamesRemaining > 0:
-    print ("Iteration: " + str(NUM_ITERATIONS - gamesRemaining))
     # Get the current state of the game.
     state = get_state()
     state_encoded = encode_state(state)
-    print("encoded state: " + str(state_encoded))
+    # print("encoded state: " + str(state_encoded))
     piece = state["piece"]
 
     if control.is_game_over():
       control.new_game()
       gamesRemaining -= 1
+      print ("Iteration: " + str(NUM_ITERATIONS - gamesRemaining))
       continue
 
     # Get all the possible plays.
     myMove = Move(control)
     possible_plays = myMove.all_possible_end_states()
-    print ("possible_plays:", len(possible_plays))
+    # print ("possible_plays:", len(possible_plays))
     boards_after = [play["board_after"] for play in possible_plays]
-    print ("boards_after:", len(boards_after))
+    # print ("boards_after:", len(boards_after))
     _boards = []
+    badBoardCount = 0
     for board in boards_after:
-      print("board type:", type(board))
+      # print("board type:", type(board))
       # if board is NoneType, then it's a bad board and we should skip it
       if board is None:
-        print("XXXXXXXXXXXXX board is None and not good XXXXXXXXXXXXXXX")
-        print("substituting a dummy board for now")
+        badBoardCount += 1
+        # print("XXXXXXXXXXXXX board is None and not good XXXXXXXXXXXXXXX")
+        # print("substituting a dummy board for now")
         # Create a dummy board XXX this is really bad
         board = [[0 for x in range(10)] for y in range(20)]
         _boards.append(board)
         continue
-      print("board[0] type:", type(board[0]))
-      print("board shape: " + str(len(board)) + " x " + str(len(board[0])))
+      # print("board[0] type:", type(board[0]))
+      # print("board shape: " + str(len(board)) + " x " + str(len(board[0])))
       _boards.append(board)
     boards_after = _boards
+    print(badBoardCount, "dummy boards") # XXX the count is never zero, no need for a conditionsl unfortunately
     np_boards_after = np.array([np.array(board) for board in _boards])
     rewards = [Reward(state, board).get_reward() for board in boards_after]
     batch_size = len(rewards) # 40
@@ -226,25 +245,28 @@ def train_model(model):
     rewards = rewards.reshape((batch_size, 1)) # Fixes: Incompatible shapes: [39,20,5] vs. [39]
 
     # note: only call the model summary after the model has been instantiated
-    print ("Model summary:", model.summary(), model.input_shape, model.output_shape)
+    # print ("Model summary:", model.summary(), model.input_shape, model.output_shape)
 
     # Choose an action.
-    bestChoices = np.nanargmax(model.predict(np_boards_after)[0])
-    print ("XXXXXXXX ignore the model's choice of action for now and do the one that got the biggest Reward XXXXXXXXXX")
-    bestChoices = np.nanargmax(rewards)
-    # choose random from bestChoices
-    actionChoice = np.random.choice(bestChoices)
+    with stdout_redirected("/dev/null"):
+      prediction = model.predict(np_boards_after)[0]
+
+    actionChoice = np.argmax(prediction)
+    # print ("XXXXXXXX ignore the model's choice of action for now and do the one that got the biggest Reward XXXXXXXXXX")
+    actionChoice = np.argmax(rewards)
+
+    # print ("rewards:", rewards)    
+    print("position:", possible_plays[actionChoice]["position"], "rotation:", possible_plays[actionChoice]["rotation"], "reward:", rewards[actionChoice])
 
     # Take the action.
     motion = possible_plays[actionChoice]["motion"]
-    myMove.perform_motion(motion)
+    myMove.perform_motion(motion, True)
 
     time.sleep(control.get_tick()/1000.0) # as long as we wait at least a tick, the reward should be close enough
 
     # Update the model.
-
-    model.fit(np_boards_after, rewards, epochs=1, batch_size=batch_size)
-
+    with stdout_redirected("/dev/null"):
+      model.fit(np_boards_after, rewards, epochs=1, batch_size=batch_size)
 
     # Save the model to the file every minute.
     elapsed_time = time.time() - start_time

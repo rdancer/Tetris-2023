@@ -6,7 +6,7 @@ class Reward:
         # Compute the reward for the given state transition.
         self.beforeState = beforeState
         self.board_after = board_after
-        print("Reward: board_after: ", board_after)
+        # print("Reward: board_after: ", board_after)
         self.num_completed_rows, self.board_after_cleared = self.clear_rows(board_after)
         self.score_after = self.beforeState["score"] + self.num_completed_rows
         self.high_score_after = max(self.beforeState["highScore"], (self.score_after - self.beforeState["score"]))
@@ -101,18 +101,28 @@ class Reward:
 
 
     def get_reward(self):
-        if self.board_after is None:
-             return -42 # Do not do this move at all
-        # Compute the reward for the given state transition.
-        # Initialize a variable to store the reward.
-        reward = 0
-        reward += self.last_empty_row(self.board_after_cleared) - self.last_empty_row(self.beforeState["board"])
-        reward += sum(self.row_fill_fractions(self.board_after_cleared)) - sum(self.row_fill_fractions(self.beforeState["board"]))
-        reward += self.board_fill_fraction(self.board_after_cleared) - self.board_fill_fraction(self.beforeState["board"])
-        reward += self.score_after - self.beforeState["score"]
-        reward += self.high_score_after - self.beforeState["highScore"]
-        reward += self.num_completed_rows ** 1.5 * 100 # really juicy, and gets more juicier the more row we clear at a time
 
-        return reward
+        # XXX these are invalid boards, or most likely invalid
+        if self.board_after is None:
+             return -42000 # Do not do this move at all
+        # if board is full of zeroes (this would only happen at the beginning, in which case just put a piece down)
+        if self.board_after == [[0 for i in range(10)] for j in range(20)]:
+            return -42000 # Do not do this move at all
+
+
+        # Compute the reward for the given state transition.
+
+        keep_height_low = (self.last_empty_row(self.board_after_cleared) - self.last_empty_row(self.beforeState["board"])) * 10
+        fill_rows_evenly = sum(self.row_fill_fractions(self.board_after_cleared)) - sum(self.row_fill_fractions(self.beforeState["board"]))
+        keep_board_empty = self.board_fill_fraction(self.board_after_cleared) - self.board_fill_fraction(self.beforeState["board"])
+        increase_score = self.score_after - self.beforeState["score"]
+        careful_when_score_high = self.high_score_after - self.beforeState["highScore"]
+        complete_rows = self.num_completed_rows ** 1.5 * 100 # really juicy, and gets more juicier the more row we clear at a time
+
+        total_reward = keep_height_low + fill_rows_evenly + keep_board_empty + increase_score + careful_when_score_high + complete_rows
+        
+        print( 'reward: ', total_reward, ': keep_height_low: ', keep_height_low, 'fill_rows_evenly: ', fill_rows_evenly, 'keep_board_empty: ', keep_board_empty, 'increase_score: ', increase_score, 'careful_when_score_high: ', careful_when_score_high, 'complete_rows: ', complete_rows)
+
+        return total_reward
 
 

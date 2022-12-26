@@ -18,7 +18,7 @@ class control:
         self.page = None
         self.browser_open = False
         self.playwright = sync_playwright().start()
-        print(self.playwright)
+        # print(self.playwright)
 
         # Launch a new browser
         self.browser = self.playwright.chromium.launch(headless=False)
@@ -44,15 +44,16 @@ class control:
 
 
     def __enter__(self):
-        print("entering Control")
+        # print("entering Control")
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        print("exiting Control")
+        # print("exiting Control")
         # if self.browser_open:
         #     self.browser.close()
         #     self.browser_open = False
         # self.playwright.stop()
+        pass
 
     def left(self):
         # Evaluate JavaScript to call the left method on the Control class.
