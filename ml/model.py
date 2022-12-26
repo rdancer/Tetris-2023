@@ -9,7 +9,7 @@ from tetris_control import control as ctrl
 from reward import Reward
 from move import Move
 
-MODEL_FILE_NAME = "autopilot-model.h5"
+MODEL_WEIGHTS_SAVE_FILE_NAME = "autopilot-model-weights.h5"
 NUM_ITERATIONS = 42
 TICK = 100 # milliseconds
 
@@ -184,13 +184,19 @@ def train_model(model):
   start_time = time.time()
 
   # Train the model.
-  for i in range(NUM_ITERATIONS):
-    print ("Iteration: " + str(i))
+  gamesRemaining = NUM_ITERATIONS
+  while gamesRemaining > 0:
+    print ("Iteration: " + str(NUM_ITERATIONS - gamesRemaining))
     # Get the current state of the game.
     state = get_state()
     state_encoded = encode_state(state)
     print("encoded state: " + str(state_encoded))
     piece = state["piece"]
+
+    if control.is_game_over():
+      control.new_game()
+      gamesRemaining -= 1
+      continue
 
     # Get all the possible plays.
     myMove = Move(control)
@@ -219,12 +225,13 @@ def train_model(model):
     rewards = np.array(rewards)
     rewards = rewards.reshape((batch_size, 1)) # Fixes: Incompatible shapes: [39,20,5] vs. [39]
 
+    # note: only call the model summary after the model has been instantiated
+    print ("Model summary:", model.summary(), model.input_shape, model.output_shape)
 
     # Choose an action.
     actionChoice = np.argmax(model.predict(np_boards_after)[0])
-
-    # note: only call the model summary after the model has been instantiated
-    print ("Model summary:", model.summary(), model.input_shape, model.output_shape)
+    print ("XXXXXXXX ignore the model's choice of action for now and do the one that got the biggest Reward XXXXXXXXXX")
+    actionChoice = np.argmax(rewards)
     
     # Take the action.
     motion = possible_plays[actionChoice]["motion"]
@@ -240,8 +247,9 @@ def train_model(model):
     # Save the model to the file every minute.
     elapsed_time = time.time() - start_time
     if elapsed_time >= 60:
-      model.save(MODEL_FILE_NAME)
-      print("Saved model to file " + MODEL_FILE_NAME)
+      # Save model weights to HDF5 file
+      model.save_weights(MODEL_WEIGHTS_SAVE_FILE_NAME)
+      print("Saved model to file " + MODEL_WEIGHTS_SAVE_FILE_NAME)
       start_time = time.time()
 
 
@@ -251,15 +259,15 @@ def main():
     control = _control
     print ("Training the model...")
 
+    # Define the model.
+    # model = create_model()
+    model = create_constant_model()
+
     # Check if the model file exists.
-    if os.path.exists(MODEL_FILE_NAME):
-      # Load the model from the file.
-      model = tf.keras.models.load_model(MODEL_FILE_NAME)
-      print("Loaded model from file " + MODEL_FILE_NAME)
-    else:
-      # Define the model.
-      # model = create_model()
-      model = create_constant_model()
+    if os.path.exists(MODEL_WEIGHTS_SAVE_FILE_NAME):
+      # Load weights into the model
+      model.load_weights(MODEL_WEIGHTS_SAVE_FILE_NAME)
+
 
 
     control.set_tick(TICK)

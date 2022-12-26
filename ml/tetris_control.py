@@ -107,3 +107,8 @@ class control:
         # Evaluate JavaScript to set the current tick.
         self.page.evaluate("Control.setTick(%d)" % tick)
 
+    def is_game_over(self):
+        # Evaluate JavaScript to check if the game is over.
+        is_game_over = self.page.evaluate("Control.isGameOver()")
+        return is_game_over
+
