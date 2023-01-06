@@ -1,7 +1,3 @@
-.PHONY: train
-train:
-	@echo "Training model... NOT IMPLEMENTED."
-
 .PHONY: test
 test:
 	@echo "Testing Control..."
