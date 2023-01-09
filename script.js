@@ -287,7 +287,7 @@ function resetGame() {
 }
 
 function getHighScore() {
-    return localStorage.getItem("highScore") || 0;
+    return +localStorage.getItem("highScore") || 0;
 }
 
 function updateHighScoreDisplay() {
