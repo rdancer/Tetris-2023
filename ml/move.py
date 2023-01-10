@@ -8,7 +8,6 @@ class Piece:
         self.type = piece["type"]
         self.shape = self._crop(piece["shape"]) # discard the offsets; autopilot will just have to go 10x to the left to find out the true zero x position
         self.rotation = piece["rotation"]
-        print("Piece:", str(piece))
 
     def get_shape(self):
         return self.shape
@@ -106,7 +105,7 @@ class Move:
         for rotation in self.possible_rotations:
             shape = myPiece.rotate(rotation)
             width = myPiece.get_shape_width()
-            print("shape: " + str(shape) + " width: " + str(width) + " rotation: " + str(rotation) + " x offset: " + str(myPiece.get_x_offset()))
+            # print("shape: " + str(shape) + " width: " + str(width) + " rotation: " + str(rotation) + " x offset: " + str(myPiece.get_x_offset()))
             for position in self.possible_positions:
                 if width + position <= 10:
                     board_after = self.simulate(position, rotation, shape)
@@ -162,7 +161,7 @@ class Move:
         shape_offset = piece.get_x_offset()
         lateral_displacement = position
         lateral_displacement -= piece_x_origin
-        lateral_displacement -= shape_offset
+        lateral_displacement += shape_offset
 
         if lateral_displacement > 0:
             for i in range(lateral_displacement):

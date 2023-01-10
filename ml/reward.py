@@ -121,7 +121,7 @@ class Reward:
 
         total_reward = keep_height_low + fill_rows_evenly + keep_board_empty + increase_score + careful_when_score_high + complete_rows
         
-        print( 'reward: ', total_reward, ': keep_height_low: ', keep_height_low, 'fill_rows_evenly: ', fill_rows_evenly, 'keep_board_empty: ', keep_board_empty, 'increase_score: ', increase_score, 'careful_when_score_high: ', careful_when_score_high, 'complete_rows: ', complete_rows)
+        # print( 'reward: ', total_reward, ': keep_height_low: ', keep_height_low, 'fill_rows_evenly: ', fill_rows_evenly, 'keep_board_empty: ', keep_board_empty, 'increase_score: ', increase_score, 'careful_when_score_high: ', careful_when_score_high, 'complete_rows: ', complete_rows)
 
         return total_reward
 
