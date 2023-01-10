@@ -8,10 +8,4 @@ Press the **Start** button to begin the game, and use the left and right arrow k
 
 We hope you have a great time playing Tetris 2023!
 
-<video autoplay loop muted>
-  <source src="img/screen-recording.webm" type="video/webm" />
-  ![screenshot of a completed tetris game](img/screenshot.png)
-</video>
-
-
-
+![screenshot of a completed tetris game](img/screen-recording.gif)
