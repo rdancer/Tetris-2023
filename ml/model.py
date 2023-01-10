@@ -2,6 +2,12 @@
 
 import os
 import sys
+
+# Silence the cretinous nagging of TensorFlow:
+# "This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 FMA
+# "To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags."
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1' # Note: needs to be set before importing tensorflow
+
 import tensorflow as tf
 from tensorflow.keras.layers import Input, concatenate, Dense, Flatten, Conv2D, MaxPooling2D, Dropout
 import numpy as np
@@ -16,20 +22,6 @@ TICK = 100 # milliseconds
 
 
 control = None # global object to control the game
-
-
-class stdout_redirected(object):
-    def __init__(self, to="/dev/null"):
-        self.to = to
-
-    def __enter__(self):
-        self.sys_stdout = sys.stdout
-        sys.stdout = open(self.to, 'w')
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        sys.stdout.close()
-        sys.stdout = self.sys_stdout
-
 
 
 # Define the state space.
@@ -248,8 +240,7 @@ def train_model(model):
     # print ("Model summary:", model.summary(), model.input_shape, model.output_shape)
 
     # Choose an action.
-    with stdout_redirected("/dev/null"):
-      prediction = model.predict(np_boards_after)[0]
+    prediction = model.predict(np_boards_after)[0]
 
     actionChoice = np.argmax(prediction)
     # print ("XXXXXXXX ignore the model's choice of action for now and do the one that got the biggest Reward XXXXXXXXXX")
@@ -265,8 +256,7 @@ def train_model(model):
     time.sleep(control.get_tick()/1000.0) # as long as we wait at least a tick, the reward should be close enough
 
     # Update the model.
-    with stdout_redirected("/dev/null"):
-      model.fit(np_boards_after, rewards, epochs=1, batch_size=batch_size)
+    model.fit(np_boards_after, rewards, epochs=1, batch_size=batch_size)
 
     # Save the model to the file every minute.
     elapsed_time = time.time() - start_time

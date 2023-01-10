@@ -5,62 +5,86 @@
 class Piece:
     def __init__(self, piece):
         self.piece = piece
+        self.type = piece["type"]
+        self.shape = self._crop(piece["shape"]) # discard the offsets; autopilot will just have to go 10x to the left to find out the true zero x position
+        self.rotation = piece["rotation"]
+        print("Piece:", str(piece))
 
-    def get_offsets(self):
-        shape = self.piece["shape"]
-        offset = {}
-        offset["left"] = 0
-        offset["right"] = 0
-        offset["top"] = 0
-        offset["bottom"] = 0
-        row_count = 0
-        for row in shape:
-            for col in row:
-                if col == 1:
-                    offset["left"] = min(offset["left"], col)
-                    offset["right"] = max(offset["right"], col)
-                    offset["top"] = min(offset["top"], row_count)
-                    offset["bottom"] = max(offset["bottom"], row_count)
-            row_count += 1
-        # print("offset: " + str(offset))
-        return offset
+    def get_shape(self):
+        return self.shape
 
-    def crop(self):
-        shape = self.piece["shape"]
-        # print("self.piece[shape]: " + str(shape))
+    def _crop(self, shape):
         cropped_shape = []
-        offset = self.get_offsets()
-        for row in shape[offset["top"]:offset["bottom"] + 1]:
-            cropped_shape.append(row[offset["left"]:offset["right"] + 1])
-        # print("cropped shape: " + str(cropped_shape))            
+        offsets = self.get_offsets()
+        for row in shape[offsets["top"]:len(shape) - offsets["bottom"]]:
+            cropped_shape.append(row[offsets["left"]:len(shape[0]) - offsets["right"]])
         return cropped_shape
 
-    def rotate(self, num_rotations):
-        shape = self.crop()
-        if num_rotations == 0:
-            return shape
-        for i in range(num_rotations):
-            shape = self._rotate90(shape)
-        return shape
+    def get_offsets(self):
+        if hasattr(self, "crop_offsets"):
+            return self.crop_offsets
+        shape = self.piece["shape"]
+        offsets = {
+            # Initialise to infinities; if it stays that way, that means there is an internal error
+            "left": float("inf"),
+            "right": float("inf"),
+            "top": float("inf"),
+            "bottom": float("inf")
+        }
+        for row in range(len(shape)):
+            for col in range(len(shape[row])):
+                value = shape[row][col]
+                if value == 1:
+                     offsets["left"] = min(offsets["left"], col)
+                     offsets["right"] = min(offsets["right"], len(shape[row]) - 1 - col)
+                     offsets["top"] = min(offsets["top"], row)
+                     offsets["bottom"] = min(offsets["bottom"], len(shape) - 1 - row)
+        self.crop_offsets = offsets
+        return offsets
 
-    def _rotate90(self, shape):
+    def rotate(self, rotation):
+        for i in range(((rotation + 4) - self.rotation) % 4):
+            self.rotate90()
+        return self.shape
+
+    def rotate90(self):
+        """Rotate a shape 90 degrees clockwise
+
+        [1, 2, 3],
+        [4, 5, 6]
+
+        becomes
+
+        [4, 1],
+        [5, 2],
+        [6, 3]"""
+        self._rotate_offsets90()
+        shape, rotation = self.shape, self.rotation
         rotated_shape = []
         for col in range(len(shape[0])):
             rotated_shape.append([])
             for row in range(len(shape)):
+                row = len(shape) - row - 1
                 rotated_shape[col].append(shape[row][col])
 
         # print("rotated shape: " + str(rotated_shape))
-        return rotated_shape
+        self.shape, self.rotation = rotated_shape, (rotation + 1) % 4
+        return self.shape
     
-    def get_shape_offset(self):
-        return self.get_offsets()["left"]
+    def _rotate_offsets90(self):
+        offsets = self.crop_offsets
+        self.crop_offsets = {
+            "top": offsets["left"],
+            "right": offsets["top"],
+            "bottom": offsets["right"],
+            "left": offsets["bottom"]
+        }
 
+    def get_shape_width(self):
+        return len(self.shape[0])
 
-    @classmethod
-    def get_shape_width(cls, shape):
-        # max of row lengths
-        return max([len(row) for row in shape])
+    def get_x_offset(self):
+        return -self.crop_offsets["left"]
 
 
 class Move:
@@ -68,49 +92,56 @@ class Move:
         self.control = control
         self.possible_positions = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
         self.possible_rotations = [0, 1, 2, 3]
+        self.state = self.control.get_state()
 
     def board(self):
-        board = self.control.get_state()["board"]
-        # make a deep copy of board
-        return [row[:] for row in board]
+        return self.state["board"]
 
     def piece(self):
-        return self.control.get_state()["piece"]
+        return self.state["piece"]
     
     def all_possible_end_states(self):
+        myPiece = Piece(self.piece())
         possible_end_states = []
-        rotated_shapes = [Piece(self.piece()).rotate(rotation) for rotation in self.possible_rotations]
         for rotation in self.possible_rotations:
-            shape = Piece(self.piece()).rotate(rotation)
+            shape = myPiece.rotate(rotation)
+            width = myPiece.get_shape_width()
+            print("shape: " + str(shape) + " width: " + str(width) + " rotation: " + str(rotation) + " x offset: " + str(myPiece.get_x_offset()))
             for position in self.possible_positions:
-                # print("shape: " + str(shape) + " rotation: " + str(rotation) + " position: " + str(position))
-                if Piece.get_shape_width(shape) + position <= 10:
-                    result = self.simulate(position, rotation, shape)
+                if width + position <= 10:
+                    board_after = self.simulate(position, rotation, shape)
                 else:
-                    result = None
-                possible_end_states.append({ "board_after": result, "motion": self.construct_move(position, rotation), "position": position, "rotation": rotation })
+                    board_after = None
+                possible_end_states.append({
+                    "valid": board_after != None,
+                    "rotation": rotation,
+                    "position": position,
+                    "shape": shape,
+                    "board_after": board_after,
+                    "motion": self.construct_move(position, rotation)
+                })
         
         # print("possible end states: ", possible_end_states)
         return possible_end_states
 
     def simulate(self, xPosition, rotation, shape):
-        board = self.board()
         # algorithm:
-        # (1) superpose the piece on the board
+        # (1) superimpose the piece on the board
         # (2) if there is a colision, return the previous board state
         # (3) else move piece down one row and repeat
         lastBoard = None
-        for y in range(0, 20):
+        freshBoard = self.board()
+        for y in range(20):
+            board = [row[:] for row in freshBoard]
             for row in range(len(shape)):
                 for col in range(len(shape[row])):
                     if shape[row][col] == 1:
-                        if row + y >= 20:
-                            return lastBoard
-                        if board[row + y][col + xPosition] == 1:
+                        if row + y >= 20 or board[row + y][col + xPosition] == 1:
                             return lastBoard
                         else:
                             board[row + y][col + xPosition] = 1
-            lastBoard = [row[:] for row in board]
+            lastBoard = board
+        return lastBoard
 
     def perform_motion(self, motion, drop = False):
         # print("motion: " + str(motion) + " drop: " + str(drop))
@@ -118,17 +149,17 @@ class Move:
             motion[i]()
         if drop:
             self.control.drop()
- 
+
     def construct_move(self, position, rotation, drop = False):
         motion = []
         # rotate the piece
         for i in range(rotation):
             motion.append(self.control.rotate)
         # compute the moves necessary to get the uncropped piece to the desired position
-        piece = self.piece()
-        piece_x_origin = piece["x"]
-        shape_offset = Piece(piece).get_shape_offset()
-        # print("shape_offset: " + str(shape_offset) + " piece_x_origin: " + str(piece_x_origin) + " position: " + str(position))
+        piece_x_origin = self.piece()["x"]
+        piece = Piece(self.piece())
+        piece.rotate(rotation) # rotate to get the right offsets
+        shape_offset = piece.get_x_offset()
         lateral_displacement = position
         lateral_displacement -= piece_x_origin
         lateral_displacement -= shape_offset
@@ -144,18 +175,3 @@ class Move:
             motion.append(self.control.drop)
 
         return motion
-
-
-
-    def end_state(self, position, rotation):
-        rotated_shape = Piece(self.piece()).rotate(rotation) # God, this is ineficient!
-        # how far to the left can we move it? always all the way
-        x_init = 0
-        # how far to the right can we move it?
-        x_max = 10 - Piece.get_shape_width(rotated_shape)
-        board_state = [self.move(position, rotation) for position in range(x_init, x_max)]
-
-        
-    def move_sequence(self, move_sequence):
-        for move in move_sequence:
-            self.move(move)
