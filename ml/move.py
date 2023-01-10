@@ -125,10 +125,10 @@ class Move:
         return possible_end_states
 
     def simulate(self, xPosition, rotation, shape):
-        # algorithm:
-        # (1) superimpose the piece on the board
-        # (2) if there is a colision, return the previous board state
-        # (3) else move piece down one row and repeat
+        """algorithm:
+        (1) superimpose the piece on the board
+        (2) if there is a colision, return the previous board state
+        (3) else move piece down one row and repeat"""
         lastBoard = None
         freshBoard = self.board()
         for y in range(20):
