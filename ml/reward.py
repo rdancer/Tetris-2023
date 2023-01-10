@@ -117,7 +117,7 @@ class Reward:
         keep_board_empty = self.board_fill_fraction(self.board_after_cleared) - self.board_fill_fraction(self.beforeState["board"])
         increase_score = self.score_after - self.beforeState["score"]
         careful_when_score_high = self.high_score_after - self.beforeState["highScore"]
-        complete_rows = self.num_completed_rows ** 1.5 * 100 # really juicy, and gets more juicier the more row we clear at a time
+        complete_rows = self.num_completed_rows ** 1.5 * 1000 # really juicy, and gets more juicier the more row we clear at a time
 
         total_reward = keep_height_low + fill_rows_evenly + keep_board_empty + increase_score + careful_when_score_high + complete_rows
         
