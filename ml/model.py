@@ -1,7 +1,6 @@
 # model.py -- This module contains the code for training and using a reinforcement learning model to play Tetris. It defines a Model class that defines the model and provides methods for training and using the model to take actions in the game.
 
 import os
-import sys
 
 # Silence the cretinous nagging of TensorFlow:
 # "This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 FMA
