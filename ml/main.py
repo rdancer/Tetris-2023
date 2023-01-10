@@ -1,1 +1,0 @@
-# main.py -- This module contains the code for running the program to train the model and start the autopilot. It defines a main() function that trains the model and starts the autopilot, as well as the startAutopilot() and pauseAutopilot() functions for starting and stopping the autopilot.
