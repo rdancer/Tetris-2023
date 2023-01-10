@@ -241,7 +241,7 @@ def train_model(model):
       # print("board shape: " + str(len(board)) + " x " + str(len(board[0])))
       _boards.append(board)
     boards_after = _boards
-    print(badBoardCount, "dummy boards") # XXX the count is never zero, no need for a conditionsl unfortunately
+    # print(badBoardCount, "dummy boards")
     np_boards_after = np.array([np.array(board) for board in _boards])
     rewards = [Reward(state, board).get_reward() for board in boards_after]
     batch_size = len(rewards) # 40
@@ -260,7 +260,7 @@ def train_model(model):
     actionChoice = np.argmax(rewards)
 
     # print ("rewards:", rewards)    
-    print("position:", possible_plays[actionChoice]["position"], "rotation:", possible_plays[actionChoice]["rotation"], "reward:", rewards[actionChoice])
+    print("piece:", piece["type"], "position:", possible_plays[actionChoice]["position"], "rotation:", possible_plays[actionChoice]["rotation"], "reward:", rewards[actionChoice])
 
     # Take the action.
     motion = possible_plays[actionChoice]["motion"]
