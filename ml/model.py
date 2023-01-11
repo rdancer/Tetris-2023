@@ -219,14 +219,14 @@ def main():
     train_model(model)
 
 def maybeLoadWeights(model):
-    global weightsLoaded
-    if weightsLoaded:
-      return
-    weightsLoaded = True
-    # Check if the model file exists.
-    if os.path.exists(MODEL_WEIGHTS_SAVE_FILE_NAME):
-      # Load weights into the model
-      model.load_weights(MODEL_WEIGHTS_SAVE_FILE_NAME)
+  global weightsLoaded
+  if weightsLoaded:
+    return
+  weightsLoaded = True
+  # Check if the model file exists.
+  if os.path.exists(MODEL_WEIGHTS_SAVE_FILE_NAME):
+    # Load weights into the model
+    model.load_weights(MODEL_WEIGHTS_SAVE_FILE_NAME)
 
 
 main()
