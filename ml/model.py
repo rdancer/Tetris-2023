@@ -9,7 +9,6 @@ import sys
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1' # Note: needs to be set before importing tensorflow
 
 import tensorflow as tf
-from tensorflow.keras.layers import Input, concatenate, Dense, Flatten, Conv2D, MaxPooling2D, Dropout
 import numpy as np
 import time
 from tetris_control import control as ctrl
@@ -17,6 +16,7 @@ from reward import Reward
 from move import Move
 
 MODEL_WEIGHTS_SAVE_FILE_NAME = "autopilot-model-weights.h5"
+weightsLoaded = False
 NUM_ITERATIONS = 42
 TICK = 100 # milliseconds
 
@@ -42,52 +42,19 @@ def get_state():
   return state
 
 def encode_state(state):
-  return np.array([[0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 1.],
-       [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
-       [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
-       [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
-       [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
-       [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
-       [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
-       [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1.],
-       [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
-       [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
-       [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1.],
-       [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
-       [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
-       [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
-       [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1.],
-       [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
-       [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
-       [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1.],
-       [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 1.]])
-
-def foobar():
   board = np.array(state["board"])
   piece = state["piece"]
 
   # pad the shape so that all the shape have the same size
   pad_piece_4x4(piece)
+  shape_padded_4x4 = piece["shape"]
 
   # one-hot encode the piece type
   piece_type = np.zeros(7)
   piece_type[control.piece_types.index(piece["type"])] = 1
 
-  # one-hot encode the piece rotation
-  piece_rotation = np.zeros(4)
-  piece_rotation[piece["rotation"]] = 1
-
-  # one-hot encode the piece x position
-  piece_x_position = np.zeros(10)
-  piece_x_position[piece["x"]] = 1
-
-  # one-hot encode the piece y position
-  piece_y_position = np.zeros(20)
-  piece_y_position[piece["y"]] = 1
-  
   # one-hot encode the score
-  # we are interested in the model being a bit cautious when the score is high, so encode a one-bit values for the score
-  # We need 40 bits, and only have 38 so far, so expand the score to 3 bits
+  # we are interested in the model being a bit cautious when the score is high
   isHighScore = np.zeros(3)
   if state["score"] >= state["highScore"]:
     isHighScore[0] = 1
@@ -97,18 +64,11 @@ def foobar():
     isHighScore[2] = 1
 
   # combine everything but the board into a single 1-D array
-  combinedArray = concatenate_arrays((piece["shape"], piece_type, piece_rotation, piece_x_position, isHighScore))
+  combinedVector = concatenate_arrays((board, shape_padded_4x4, piece_type, isHighScore))
 
-  # reshape the flattened array so that it can be concatenated with the board
-  combinedArray = np.reshape(combinedArray, (20, 2))
+  # print("combinedVector shape: " + str(combinedVector.shape)) # 226
 
-  # concatenate the board and the combined array
-  returnArray = np.hstack((board, combinedArray))
-
-  # print("returnArray shape: " + str(returnArray.shape))
-
-  return returnArray
-
+  return combinedVector
 
 def concatenate_arrays(arrays):
   """
@@ -131,17 +91,11 @@ def concatenate_arrays(arrays):
 
   return concatenated_array
 
-
-
 def pad_piece_4x4(piece):
   """Pad a piece to 4x4, if necessary. This is necessary because the piece can be smaller than 4x4. The padding is done on the right and bottom. The padding is done with zeros. This is necessary because the model needs all pieces to be the same size. This function modifies the piece in place. Returns the piece."""
   pad_width = ((0, 4 - len(piece["shape"])), (0, 4 - len(piece["shape"][0])))
   piece["shape"] = np.pad(piece["shape"], pad_width, 'constant', constant_values=0)
   return piece
-
-# Define the action space.
-def get_actions():
-  return [control.left, control.right, control.down, control.rotate, control.drop]
 
 def create_model():
   """Create model -- new version written by hand, now with some actual understanding of what I'm doing"""
@@ -154,47 +108,10 @@ def create_model():
   model.add(tf.keras.layers.Dense(64, activation='relu'))
   model.add(tf.keras.layers.Dense(64, activation='relu'))
 
-  model.add(tf.keras.layers.Dense(len(get_actions()), activation='softmax'))
+  numOutputs = 4 * 10 # 4 rotations × 10 positions
+  model.add(tf.keras.layers.Dense(numOutputs, activation='softmax'))
 
   # Compile the model.
-  model.compile(optimizer='adam', loss='mse')
-
-  return model
-
-def create_model_XXX_DNW():
-  """Create the model."""
-  # Define the model
-  myInput = tf.keras.layers.Input(40) # 1 input per rotation x column
-
-  # Reshape the input tensor to the desired shape
-  # reshaped_input = tf.keras.layers.Reshape((-1,))(myInput)
-
-  # print("input shape: " + str(reshaped_input.shape))
-
-  # Add hidden layers with the desired number of units and activation function
-  dense1 = tf.keras.layers.Dense(64, activation='relu')(myInput)
-  dense2 = tf.keras.layers.Dense(64, activation='relu')(dense1)
-
-  # Add the output layer with the desired number of units and activation function
-  output = tf.keras.layers.Dense(len(get_actions()), activation='softmax')(dense2)
-
-  model = tf.keras.Model(inputs=[myInput], outputs=output)
-  # Compile the model.
-  model.compile(optimizer='adam', loss='mse')
-
-  return model
-
-def create_constant_model():
-  """Create a dummy model that always returns a constant value."""
-  myInput = tf.keras.layers.Input(shape=(20,10))  # 2D array input layer
-  # Create a constant tensor with the desired shape
-  output = tf.constant([[24]], dtype=tf.float32)
-
-  # Create a Lambda layer that wraps the constant tensor and returns it as the output
-  output_layer = tf.keras.layers.Lambda(lambda x: output)(myInput)
-
-  # Define the model with the Lambda layer as the output
-  model = tf.keras.Model(inputs=myInput, outputs=output_layer)
   model.compile(optimizer='adam', loss='mse')
 
   return model
@@ -252,12 +169,17 @@ def train_model(model):
     # print ("Model summary:", model.summary(), model.input_shape, model.output_shape)
 
     # Choose an action.
+
+    np_boards_after = np_boards_after.reshape(batch_size, 1, -1)
+
+    state_encoded = state_encoded.reshape(1, -1)
     with stdout_redirected("/dev/null"):
-      prediction = model.predict(np_boards_after)[0]
+      prediction = model.predict(state_encoded)
+    maybeLoadWeights(model)
 
     actionChoice = np.argmax(prediction)
     # print ("XXXXXXXX ignore the model's choice of action for now and do the one that got the biggest Reward XXXXXXXXXX")
-    actionChoice = np.argmax(rewards)
+    # actionChoice = np.argmax(rewards)
 
     # print ("rewards:", rewards)    
     print("piece:", piece["type"], "position:", possible_plays[actionChoice]["position"], "rotation:", possible_plays[actionChoice]["rotation"], "reward:", rewards[actionChoice])
@@ -270,7 +192,7 @@ def train_model(model):
 
     # Update the model.
     with stdout_redirected("/dev/null"):
-      model.fit(np_boards_after, rewards, epochs=1, batch_size=batch_size)
+      model.fit(state_encoded, rewards.reshape(1, -1), epochs=1, batch_size=1, verbose=0)
 
     # Save the model to the file every minute.
     elapsed_time = time.time() - start_time
@@ -288,19 +210,22 @@ def main():
     print ("Training the model...")
 
     # Define the model.
-    # model = create_model()
-    model = create_constant_model()
-
-    # Check if the model file exists.
-    if os.path.exists(MODEL_WEIGHTS_SAVE_FILE_NAME):
-      # Load weights into the model
-      model.load_weights(MODEL_WEIGHTS_SAVE_FILE_NAME)
+    model = create_model()
 
 
 
     control.set_tick(TICK)
 
     train_model(model)
+
+def maybeLoadWeights(model):
+    if weightsLoaded:
+      return
+    # Check if the model file exists.
+    if os.path.exists(MODEL_WEIGHTS_SAVE_FILE_NAME):
+      # Load weights into the model
+      model.load_weights(MODEL_WEIGHTS_SAVE_FILE_NAME)
+
 
 
 main()
