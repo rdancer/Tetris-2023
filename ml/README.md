@@ -3,6 +3,7 @@
 
 ```
 npm install puppeteer && pip3 install playwright && playwright install
+pip3 install tensorflowjs
 make test && make train
 ```
 
