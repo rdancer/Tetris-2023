@@ -1,3 +1,6 @@
+# Do not print cretinous warnings
+export TF_CPP_MIN_LOG_LEVEL=1
+
 .PHONY: test
 test:
 	@echo "Testing Control..."
@@ -9,4 +12,7 @@ autopilot-model.json: model.h5
 .PHONY: train
 train:
 	@echo "Training model..."
-	python3 ./model.py --url http://localhost:8888/
+	for ((i=0;;i++)); do \
+		echo Epoch $$((i))...; \
+		python3 ./model.py --url http://localhost:8888/; \
+	done
