@@ -11,6 +11,7 @@ class Reward:
         self.score_after = self.beforeState["score"] + self.num_completed_rows
         self.high_score_after = max(self.beforeState["highScore"], (self.score_after - self.beforeState["score"]))
         # return self # TypeError: __init__() should return None, not 'Reward'
+        self.reward_tally = 0
     
     def clear_rows(self, board):
         """Clear any rows that are full and return the number of cleared rows."""
@@ -50,22 +51,8 @@ class Reward:
         return new_board
 
 
-    def last_empty_row(self, board):
-        """Return the index of the last empty row in the board."""
-        # Initialize a variable to store the count of empty rows.
-        count_empty_rows = 0
-
-        # Iterate over the rows of the board, starting from the top.
-        for i, row in enumerate(board):
-            # If the row is empty (contains only zeros), increment the count of empty rows.
-            if all(cell == 0 for cell in row):
-                count_empty_rows += 1
-            # If the row is not empty (contains any non-zero cells), exit the loop.
-            else:
-                break
-
-        # Return the squared count of empty rows.
-        return count_empty_rows ** 2
+    def empty_rows(self, board):
+        return len([row for row in board if all(cell == 0 for cell in row)])
 
     def row_fill_fractions(self, board):
         """Return a list of the fill fractions for each row in the board. It really returns fill *ratio*, i.e. the ratio of filled cells not to total cells, but to *unfilled* cells, which makes it grow non-linearly. We do this because holes are a pain in the neck, and we want to incentivise filling them."""
@@ -88,41 +75,80 @@ class Reward:
 
             return fill_fractions
 
-  
-    def board_fill_fraction(self, board):
-        """Return the fill fraction of the board, i.e. how many filled cells vs how many empty cells the board has."""
-        # Count the number of occupied cells in the board.
-        occupied_cells = sum(sum(row) for row in board)
+    def sum_row_fill_fractions(self, board):
+        """Return the sum of the fill fractions for the rows in the board."""
+        return sum(self.row_fill_fractions(board))
 
-        # Calculate the fill fraction.
-        fill_fraction = occupied_cells / len(board) * len(board[0])
+    def dead_space(self, board):
+        """Return the number of empty but inaccessible cells in the board."""
+        dead_cell_count = 0
+        covered_columns = [False] * len(board[0])
+        for row in board:
+            for i, cell in enumerate(row):
+                if cell == 1:
+                    covered_columns[i] = True
+                else:
+                    if covered_columns[i]:
+                        dead_cell_count += 1
+        return dead_cell_count
 
-        return fill_fraction
+    def bumpiness(self, board):
+        """Return the sum of the absolute differences between adjacent columns."""
+        bumpiness = 0
+        for i in range(len(board[0]) - 1):
+            bumpiness += abs(self.column_height(board, i) - self.column_height(board, i + 1))
+        return bumpiness
+
+    def column_height(self, board, column):
+        """Return the height of the given column."""
+        for i, row in enumerate(board):
+            if row[column] == 1:
+                return len(board) - i
+        return 0
+
+    def print_boards(self, board1, board2):
+        """Print the two boards side-by-side."""
+        for i in range(len(board1)):
+            print(board1[i], board2[i])
+        print()
+
+    def punish_increase(self, func, coefficient=1, **kwargs):
+        """Punish an increase in the value of the given function."""
+        self.reward_increase(func, -coefficient, **kwargs)
+
+    def reward_increase(self, func, coefficient=1, **kwargs):
+        """Reward an increase in the value of the given function."""
+        if kwargs.get("cleared"):
+            board_after = self.board_after_cleared
+        else:
+            board_after = self.board_after
+        self.reward_tally += coefficient * (func(board_after) - func(self.beforeState["board"]))
 
 
     def get_reward(self):
 
+        board_after = self.board_after
+        board_after_cleared = self.board_after_cleared
+        board_before = self.beforeState["board"]
+
         # XXX these are invalid boards, or most likely invalid
-        if self.board_after is None:
-             return -42000 # Do not do this move at all
+        if board_after is None:
+             return -42_000 # Do not do this move at all
         # if board is full of zeroes (this would only happen at the beginning, in which case just put a piece down)
-        if self.board_after == [[0 for i in range(10)] for j in range(20)]:
-            return -42000 # Do not do this move at all
+        if board_after == [[0 for i in range(10)] for j in range(20)]:
+            return -42_000 # Do not do this move at all
 
 
         # Compute the reward for the given state transition.
 
-        keep_height_low = (self.last_empty_row(self.board_after_cleared) - self.last_empty_row(self.beforeState["board"])) * 10
-        fill_rows_evenly = sum(self.row_fill_fractions(self.board_after_cleared)) - sum(self.row_fill_fractions(self.beforeState["board"]))
-        keep_board_empty = self.board_fill_fraction(self.board_after_cleared) - self.board_fill_fraction(self.beforeState["board"])
-        increase_score = self.score_after - self.beforeState["score"]
-        careful_when_score_high = self.high_score_after - self.beforeState["highScore"]
-        complete_rows = self.num_completed_rows ** 1.5 * 1000 # really juicy, and gets more juicier the more row we clear at a time
+        self.reward_increase(self.empty_rows, 55, cleared=True)
+        self.reward_increase(self.sum_row_fill_fractions, 20)
+        self.punish_increase(self.dead_space, 30, cleared=True)
+        self.punish_increase(self.bumpiness, 0.2)
+        self.reward_tally += (self.score_after - self.beforeState["score"])
+        self.reward_tally += self.high_score_after - self.beforeState["highScore"]
+        self.reward_tally += self.num_completed_rows ** 1.5 * 10_000 # really juicy, and gets more juicier the more row we clear at a time
 
-        total_reward = keep_height_low + fill_rows_evenly + keep_board_empty + increase_score + careful_when_score_high + complete_rows
-        
-        # print( 'reward: ', total_reward, ': keep_height_low: ', keep_height_low, 'fill_rows_evenly: ', fill_rows_evenly, 'keep_board_empty: ', keep_board_empty, 'increase_score: ', increase_score, 'careful_when_score_high: ', careful_when_score_high, 'complete_rows: ', complete_rows)
-
-        return total_reward
+        return self.reward_tally
 
 
