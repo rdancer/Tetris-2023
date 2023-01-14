@@ -1,6 +1,12 @@
 # Do not print cretinous warnings
 export TF_CPP_MIN_LOG_LEVEL=1
 
+.PHONY: clean
+clean:
+	rm -rf autopilot-model.json
+	rm -rf autopilot-model-weights.h5
+	rm -rf autopilot-model/
+
 .PHONY: test
 test:
 	@echo "Testing Control..."

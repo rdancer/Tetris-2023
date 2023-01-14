@@ -1,6 +1,10 @@
 .PHONY: all
 all: browser server
 
+.PHONY: clean
+clean:
+	make -C ./ml clean
+	
 .PHONY: server
 server:
 	python3 ./http-server.py 8888
