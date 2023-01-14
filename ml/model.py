@@ -55,7 +55,6 @@ class Model:
 
   def train_model(self, num_iterations, offPolicy=True):
     """Train the model."""
-    model = self.model
     # Track the elapsed time.
     self.start_time = time.time()
 
@@ -100,7 +99,7 @@ class Model:
 
       # Update the model.
       with stdout_redirected("/dev/null"):
-        model.fit(state_encoded, rewards_softmax, epochs=1, batch_size=1, verbose=0)
+        self.model.fit(state_encoded, rewards_softmax, epochs=1, batch_size=1, verbose=0)
       self.maybeSaveWeights()
 
   def softmax(self, x):
