@@ -117,6 +117,11 @@ def create_model():
 
   return model
 
+def softmax(x):
+  """Compute softmax values for each sets of scores in x."""
+  e_x = np.exp(x - np.max(x))
+  return e_x / e_x.sum()
+
 def train_model(model):
   # Track the elapsed time.
   start_time = time.time()
@@ -163,8 +168,7 @@ def train_model(model):
     np_boards_after = np.array([np.array(board) for board in _boards])
     rewards = [Reward(state, board).get_reward() for board in boards_after]
     batch_size = len(rewards) # 40
-    rewards = np.array(rewards)
-    rewards = rewards.reshape((batch_size, 1)) # Fixes: Incompatible shapes: [39,20,5] vs. [39]
+    rewards_softmax = softmax(rewards).reshape(1, batch_size)
 
     # note: only call the model summary after the model has been instantiated
     # print ("Model summary:", model.summary(), model.input_shape, model.output_shape)
@@ -179,10 +183,10 @@ def train_model(model):
     maybeLoadWeights(model)
 
     actionChoice = np.argmax(prediction)
-    # print ("XXXXXXXX ignore the model's choice of action for now and do the one that got the biggest Reward XXXXXXXXXX")
-    # actionChoice = np.argmax(rewards)
+    offPolicy = True
+    if offPolicy:
+      actionChoice = np.argmax(rewards)
 
-    # print ("rewards:", rewards)
     print("piece:", piece["type"], "position:", possible_plays[actionChoice]["position"], "rotation:", possible_plays[actionChoice]["rotation"], "reward:", rewards[actionChoice], rewards[actionChoice] - rewards[np.argmax(rewards)])
 
     # Take the action.
@@ -193,7 +197,7 @@ def train_model(model):
 
     # Update the model.
     with stdout_redirected("/dev/null"):
-      model.fit(state_encoded, rewards.reshape(1, -1), epochs=1, batch_size=1, verbose=0)
+      model.fit(state_encoded, rewards_softmax, epochs=1, batch_size=1, verbose=0)
 
     # Save the model to the file every minute.
     elapsed_time = time.time() - start_time
