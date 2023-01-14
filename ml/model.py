@@ -3,25 +3,16 @@
 import os
 import sys
 
-# Silence the cretinous nagging of TensorFlow:
-# "This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 FMA
-# "To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags."
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1' # Note: needs to be set before importing tensorflow
 
 import tensorflow as tf
 import numpy as np
 import time
-from tetris_control import control as ctrl
 from reward import Reward
 from move import Move
+from state import State
 
+MODEL_SAVE_FILE_NAME = "autopilot-model.h5"
 MODEL_WEIGHTS_SAVE_FILE_NAME = "autopilot-model-weights.h5"
-weightsLoaded = False
-NUM_ITERATIONS = 42
-TICK = 100 # milliseconds
-
-
-control = None # global object to control the game
 
 class stdout_redirected(object):
     def __init__(self, to="/dev/null"):
@@ -35,203 +26,111 @@ class stdout_redirected(object):
         sys.stdout.close()
         sys.stdout = self.sys_stdout
 
+class Model:
+  def __init__(self, control):
+    self.control = control
+    self.model = self.create_model()
+    self.weightsLoaded = False
+    self.state = State(control)
 
-# Define the state space.
-def get_state():
-  state = control.get_state()
-  return state
+  def create_model(self):
+    """Create model -- new version written by hand, now with some actual understanding of what I'm doing"""
+    model = tf.keras.Sequential()
 
-def encode_state(state):
-  board = np.array(state["board"])
-  piece = state["piece"]
+    # Comment this out so that the shape is not specified until the model is first instantiated
+    # myShape = encode_state(get_state()).shape
+    # model.add(tf.keras.layers.Input(input_shape=myShape))
 
-  # pad the shape so that all the shape have the same size
-  pad_piece_4x4(piece)
-  shape_padded_4x4 = piece["shape"]
+    model.add(tf.keras.layers.Dense(1024, activation='relu'))
+    model.add(tf.keras.layers.Dense(512, activation='relu'))
+    model.add(tf.keras.layers.Dense(128, activation='relu'))
 
-  # one-hot encode the piece type
-  piece_type = np.zeros(7)
-  piece_type[control.piece_types.index(piece["type"])] = 1
+    numOutputs = 4 * 10 # 4 rotations × 10 positions
+    model.add(tf.keras.layers.Dense(numOutputs, activation='softmax'))
 
-  # one-hot encode the score
-  # we are interested in the model being a bit cautious when the score is high
-  isHighScore = np.zeros(3)
-  if state["score"] >= state["highScore"]:
-    isHighScore[0] = 1
-  if state["score"] >= state["highScore"] * .75:
-    isHighScore[1] = 1
-  if state["score"] >= state["highScore"] * .5:
-    isHighScore[2] = 1
+    # Compile the model.
+    model.compile(optimizer='adam', loss='mse')
 
-  # combine everything but the board into a single 1-D array
-  combinedVector = concatenate_arrays((board, shape_padded_4x4, piece_type, isHighScore))
+    return model
 
-  # print("combinedVector shape: " + str(combinedVector.shape)) # 226
+  def train_model(self, num_iterations, offPolicy=True):
+    """Train the model."""
+    model = self.model
+    # Track the elapsed time.
+    self.start_time = time.time()
 
-  return combinedVector
-
-def concatenate_arrays(arrays):
-  """
-  Concatenate a list of 1D or 2D arrays with a 2D array and return the resulting array.
-  
-  Parameters:
-  - board: 2D list
-    The 2D array to concatenate the 1D or 2D arrays with.
-  - arrays: list of 1D or 2D lists
-    The list of 1D or 2D arrays to concatenate with the 2D array.
-  """
-  # Convert the input arrays to NumPy arrays
-  arrays = [np.array(array) for array in arrays]
-
-  # Flatten the arrays
-  arrays = [array.flatten() for array in arrays]
-
-  # Concatenate the arrays along the first axis
-  concatenated_array = np.concatenate(arrays)
-
-  return concatenated_array
-
-def pad_piece_4x4(piece):
-  """Pad a piece to 4x4, if necessary. This is necessary because the piece can be smaller than 4x4. The padding is done on the right and bottom. The padding is done with zeros. This is necessary because the model needs all pieces to be the same size. This function modifies the piece in place. Returns the piece."""
-  pad_width = ((0, 4 - len(piece["shape"])), (0, 4 - len(piece["shape"][0])))
-  piece["shape"] = np.pad(piece["shape"], pad_width, 'constant', constant_values=0)
-  return piece
-
-def create_model():
-  """Create model -- new version written by hand, now with some actual understanding of what I'm doing"""
-  model = tf.keras.Sequential()
-
-  # Comment this out so that the shape is not specified until the model is first instantiated
-  # myShape = encode_state(get_state()).shape
-  # model.add(tf.keras.layers.Input(input_shape=myShape))
-
-  model.add(tf.keras.layers.Dense(1024, activation='relu'))
-  model.add(tf.keras.layers.Dense(512, activation='relu'))
-  model.add(tf.keras.layers.Dense(128, activation='relu'))
-
-  numOutputs = 4 * 10 # 4 rotations × 10 positions
-  model.add(tf.keras.layers.Dense(numOutputs, activation='softmax'))
-
-  # Compile the model.
-  model.compile(optimizer='adam', loss='mse')
-
-  return model
-
-def softmax(x):
-  """Compute softmax values for each sets of scores in x."""
-  e_x = np.exp(x - np.max(x))
-  return e_x / e_x.sum()
-
-def train_model(model):
-  # Track the elapsed time.
-  start_time = time.time()
-
-  # Train the model.
-  gamesRemaining = NUM_ITERATIONS
-  while gamesRemaining > 0:
-    # Get the current state of the game.
-    state = get_state()
-    state_encoded = encode_state(state)
-    # print("encoded state: " + str(state_encoded))
-    piece = state["piece"]
-
-    if control.is_game_over():
-      control.new_game()
-      gamesRemaining -= 1
-      print ("Iteration: " + str(NUM_ITERATIONS - gamesRemaining))
-      continue
-
-    # Get all the possible plays.
-    myMove = Move(control)
-    possible_plays = myMove.all_possible_end_states()
-    # print ("possible_plays:", len(possible_plays))
-    boards_after = [play["board_after"] for play in possible_plays]
-    # print ("boards_after:", len(boards_after))
-    _boards = []
-    badBoardCount = 0
-    for board in boards_after:
-      # print("board type:", type(board))
-      # if board is NoneType, then it's a bad board and we should skip it
-      if board is None:
-        badBoardCount += 1
-        # print("XXXXXXXXXXXXX board is None and not good XXXXXXXXXXXXXXX")
-        # print("substituting a dummy board for now")
-        # Create a dummy board XXX this is really bad
-        board = [[0 for x in range(10)] for y in range(20)]
-        _boards.append(board)
+    games_played = 0
+    while games_played < num_iterations:
+      if self.control.is_game_over():
+        self.control.new_game()
+        games_played += 1
+        print ("Iteration: " + str(games_played + 1) + "/" + str(num_iterations))
         continue
-      # print("board[0] type:", type(board[0]))
-      # print("board shape: " + str(len(board)) + " x " + str(len(board[0])))
-      _boards.append(board)
-    boards_after = _boards
-    # print(badBoardCount, "dummy boards")
-    np_boards_after = np.array([np.array(board) for board in _boards])
-    rewards = [Reward(state, board).get_reward() for board in boards_after]
-    batch_size = len(rewards) # 40
-    rewards_softmax = softmax(rewards).reshape(1, batch_size)
 
-    # note: only call the model summary after the model has been instantiated
-    # print ("Model summary:", model.summary(), model.input_shape, model.output_shape)
+      # Get the current state of the game.
+      state = self.state.get_state()
+      state_encoded = self.state.encode_state(state)
 
-    # Choose an action.
+      # Get all the possible plays.
+      move = Move(self.control)
+      possible_plays = move.all_possible_end_states()
+      boards_after = [play["board_after"] for play in possible_plays]
+      rewards = [Reward(state, board).get_reward() for board in boards_after]
+      batch_size = len(rewards) # 40
+      rewards_softmax = self.softmax(np.array(rewards).reshape(1, batch_size))
 
-    np_boards_after = np_boards_after.reshape(batch_size, 1, -1)
+      # Choose an action.
+      with stdout_redirected("/dev/null"):
+        prediction = self.model.predict(state_encoded)
+      self.maybeLoadWeights() # We have called the model, so now the model knows its input shape, so we can load weights
+      if offPolicy:
+        actionChoice = np.argmax(rewards)
+        assert(actionChoice == np.argmax(rewards_softmax))
+      else:
+        actionChoice = np.argmax(prediction)
 
-    state_encoded = state_encoded.reshape(1, -1)
-    with stdout_redirected("/dev/null"):
-      prediction = model.predict(state_encoded)
-    maybeLoadWeights(model)
 
-    actionChoice = np.argmax(prediction)
-    offPolicy = True
-    if offPolicy:
-      actionChoice = np.argmax(rewards)
+      print("piece:", state["piece"]["type"], "position:", possible_plays[actionChoice]["position"], "rotation:", possible_plays[actionChoice]["rotation"], "reward:", rewards[actionChoice], "(" + str(rewards[np.argmax(prediction)] - rewards[np.argmax(rewards)]) + ")")
 
-    print("piece:", piece["type"], "position:", possible_plays[actionChoice]["position"], "rotation:", possible_plays[actionChoice]["rotation"], "reward:", rewards[actionChoice], rewards[actionChoice] - rewards[np.argmax(rewards)])
+      # Take the action.
+      motion = possible_plays[actionChoice]["motion"]
+      move.perform_motion(motion, True)
 
-    # Take the action.
-    motion = possible_plays[actionChoice]["motion"]
-    myMove.perform_motion(motion, True)
+      time.sleep(self.control.get_tick()/1000.0) # we don't collect the state after the tick, so this is just for show -- XXX there seems to be some race condition and if we don't sleep(), the training moves are weird
 
-    time.sleep(control.get_tick()/1000.0) # as long as we wait at least a tick, the reward should be close enough
+      # Update the model.
+      with stdout_redirected("/dev/null"):
+        model.fit(state_encoded, rewards_softmax, epochs=1, batch_size=1, verbose=0)
+      self.maybeSaveWeights()
 
-    # Update the model.
-    with stdout_redirected("/dev/null"):
-      model.fit(state_encoded, rewards_softmax, epochs=1, batch_size=1, verbose=0)
+  def softmax(self, x):
+    """Compute softmax values for each sets of scores in x."""
+    e_x = np.exp(x - np.max(x))
+    return e_x / e_x.sum()
 
-    # Save the model to the file every minute.
-    elapsed_time = time.time() - start_time
+  def maybeSaveWeights(self):
+    """Save the model & weights to a file every minute."""
+    elapsed_time = time.time() - self.start_time
     if elapsed_time >= 60:
-      # Save model weights to HDF5 file
-      model.save_weights(MODEL_WEIGHTS_SAVE_FILE_NAME)
-      print("Saved model to file " + MODEL_WEIGHTS_SAVE_FILE_NAME)
-      start_time = time.time()
+      # Save model & weights to HDF5 files
+      self.model.save(MODEL_SAVE_FILE_NAME)
+      print("Saved model to file " + MODEL_SAVE_FILE_NAME)
+      self.model.save_weights(MODEL_WEIGHTS_SAVE_FILE_NAME)
+      print("Saved weights to file " + MODEL_WEIGHTS_SAVE_FILE_NAME)
+      self.start_time = time.time()
 
+  def maybeLoadWeights(self):
+    """Load the model weights from a file if they have not already been loaded. If the file doesn't exist, do nothing."""
+    if self.weightsLoaded:
+      return
+    self.weightsLoaded = True
+    # Check if the model file exists.
+    if os.path.exists(MODEL_WEIGHTS_SAVE_FILE_NAME):
+      # Load weights into the model
+      self.model.load_weights(MODEL_WEIGHTS_SAVE_FILE_NAME)
+      print("Loaded weights from file " + MODEL_WEIGHTS_SAVE_FILE_NAME)
+    else:
+      print("No weights file found, starting with random weights")
 
-def main():
-  global control # modify the global variable
-  with ctrl() as _control:
-    control = _control
-    print ("Training the model...")
-
-    # Define the model.
-    model = create_model()
-
-
-
-    control.set_tick(TICK)
-
-    train_model(model)
-
-def maybeLoadWeights(model):
-  global weightsLoaded
-  if weightsLoaded:
-    return
-  weightsLoaded = True
-  # Check if the model file exists.
-  if os.path.exists(MODEL_WEIGHTS_SAVE_FILE_NAME):
-    # Load weights into the model
-    model.load_weights(MODEL_WEIGHTS_SAVE_FILE_NAME)
-
-
-main()
+    # note: only call the model summary after the model has been instantiated, so this method is a convenient place to do it
+    print ("Model summary:", self.model.summary(), self.model.input_shape, self.model.output_shape)

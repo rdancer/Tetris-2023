@@ -10,7 +10,6 @@ class Reward:
         self.num_completed_rows, self.board_after_cleared = self.clear_rows(board_after)
         self.score_after = self.beforeState["score"] + self.num_completed_rows
         self.high_score_after = max(self.beforeState["highScore"], (self.score_after - self.beforeState["score"]))
-        # return self # TypeError: __init__() should return None, not 'Reward'
         self.reward_tally = 0
     
     def clear_rows(self, board):
@@ -131,13 +130,9 @@ class Reward:
         board_after_cleared = self.board_after_cleared
         board_before = self.beforeState["board"]
 
-        # XXX these are invalid boards, or most likely invalid
+        # `None` board is the result of an invalid move (e.g. moving a piece out of bounds)
         if board_after is None:
              return -42_000 # Do not do this move at all
-        # if board is full of zeroes (this would only happen at the beginning, in which case just put a piece down)
-        if board_after == [[0 for i in range(10)] for j in range(20)]:
-            return -42_000 # Do not do this move at all
-
 
         # Compute the reward for the given state transition.
 
