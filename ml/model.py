@@ -105,8 +105,9 @@ def create_model():
   # myShape = encode_state(get_state()).shape
   # model.add(tf.keras.layers.Input(input_shape=myShape))
 
-  model.add(tf.keras.layers.Dense(64, activation='relu'))
-  model.add(tf.keras.layers.Dense(64, activation='relu'))
+  model.add(tf.keras.layers.Dense(1024, activation='relu'))
+  model.add(tf.keras.layers.Dense(512, activation='relu'))
+  model.add(tf.keras.layers.Dense(128, activation='relu'))
 
   numOutputs = 4 * 10 # 4 rotations × 10 positions
   model.add(tf.keras.layers.Dense(numOutputs, activation='softmax'))
@@ -181,8 +182,8 @@ def train_model(model):
     # print ("XXXXXXXX ignore the model's choice of action for now and do the one that got the biggest Reward XXXXXXXXXX")
     # actionChoice = np.argmax(rewards)
 
-    # print ("rewards:", rewards)    
-    print("piece:", piece["type"], "position:", possible_plays[actionChoice]["position"], "rotation:", possible_plays[actionChoice]["rotation"], "reward:", rewards[actionChoice])
+    # print ("rewards:", rewards)
+    print("piece:", piece["type"], "position:", possible_plays[actionChoice]["position"], "rotation:", possible_plays[actionChoice]["rotation"], "reward:", rewards[actionChoice], rewards[actionChoice] - rewards[np.argmax(rewards)])
 
     # Take the action.
     motion = possible_plays[actionChoice]["motion"]
