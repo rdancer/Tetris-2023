@@ -24,7 +24,7 @@ from model import Model
 
 def main():
     # get the num_iterations from the command-line arguments
-    with ctrl() as control:
+    with ctrl(args.url) as control:
         print ("Training the model...")
         model = Model(control)
         control.set_tick(args.tick)

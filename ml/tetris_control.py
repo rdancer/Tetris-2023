@@ -1,19 +1,10 @@
 # tetris_control.py -- This module contains the code for interacting with the Tetris game using Playwright for Python. It defines a Control class that provides methods for taking actions in the game. The Control class proxies python code to the JavaScript code runningthe Tetris game in the browser.
 import time
-import argparse
-import os
 from playwright.sync_api import sync_playwright
 
 
-# If the --url argument is not provided, the script will exit with a helpful error message.
-parser = argparse.ArgumentParser()
-parser.add_argument("--url", required=True, help="URL of the server")
-args = parser.parse_args()
-url = args.url
-
-
 class control:
-    def __init__(self):
+    def __init__(self, url="http://localhost:8888"):
         self.browser = None
         self.page = None
         self.browser_open = False
@@ -36,11 +27,8 @@ class control:
         # Wait to allow all the scripts to load and the game to start
         time.sleep(2)
 
-        # Get the piece types from the bowels of the JavaScript code.
+        # Cache the piece types for fast access.
         self.piece_types = self.page.evaluate("pieceTypes")
-
-        # Set the flag to indicate that the browser is open
-        self.browser_open = True
 
 
     def __enter__(self):
