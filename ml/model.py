@@ -59,11 +59,15 @@ class Model:
     self.start_time = time.time()
 
     games_played = 0
+    print ("Iteration: " + str(games_played + 1) + "/" + str(num_iterations))
     while games_played < num_iterations:
       if self.control.is_game_over():
         self.control.new_game()
         games_played += 1
-        print ("Iteration: " + str(games_played + 1) + "/" + str(num_iterations))
+        if games_played < num_iterations:
+          print ("Iteration: " + str(games_played + 1) + "/" + str(num_iterations))
+        else:
+          print ("Training complete.")
         continue
 
       # Get the current state of the game.
@@ -126,8 +130,11 @@ class Model:
     # Check if the model file exists.
     if os.path.exists(MODEL_WEIGHTS_SAVE_FILE_NAME):
       # Load weights into the model
-      self.model.load_weights(MODEL_WEIGHTS_SAVE_FILE_NAME)
-      print("Loaded weights from file " + MODEL_WEIGHTS_SAVE_FILE_NAME)
+      try:
+        self.model.load_weights(MODEL_WEIGHTS_SAVE_FILE_NAME) # This will fail if the model has been changed since the weights were saved
+        print("Loaded weights from file " + MODEL_WEIGHTS_SAVE_FILE_NAME)
+      except:
+        print("Weights file found, but failed to load weights (most likely model has changed since last save) -- starting with random weights and will overwrite weights file")
     else:
       print("No weights file found, starting with random weights")
 
