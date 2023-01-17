@@ -3,7 +3,7 @@ import time
 from playwright.sync_api import sync_playwright
 
 
-class control:
+class Control:
     def __init__(self, url="http://localhost:8888"):
         self.browser = None
         self.page = None

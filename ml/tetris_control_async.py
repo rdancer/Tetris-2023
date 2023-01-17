@@ -8,7 +8,7 @@ import nest_asyncio
 nest_asyncio.apply()
 # __import__('IPython').embed()
 
-class control:
+class Control:
     def __init__(self, url="http://localhost:8888"):
         self.browser = None
         self.page = None

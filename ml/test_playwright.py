@@ -1,10 +1,10 @@
 # Test the instrumentation of the Tetris game using Puppeteer.
 
 from time import sleep
-from tetris_control import control as ctrl
+from tetris_control import Control
 
 def main():
-    with ctrl() as control:
+    with Control() as control:
         print ("testing Control...")
         attempts = 0
 

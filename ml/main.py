@@ -19,12 +19,12 @@ args = parser.parse_args()
 # "To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags."
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1' # Note: needs to be set before importing tensorflow
 
-from tetris_control import control as ctrl
+from tetris_control import Control
 from model import Model
 
 def main():
     # get the num_iterations from the command-line arguments
-    with ctrl(args.url) as control:
+    with Control(args.url) as control:
         print ("Training the model...")
         model = Model(control)
         control.set_tick(args.tick)
