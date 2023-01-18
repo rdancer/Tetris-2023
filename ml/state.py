@@ -63,12 +63,12 @@ class State:
         # the convolutional network loves when the pieces are spatially unique as well as shape unique
         piece_type_index = self.control.piece_types.index(piece["type"]) # ["I", "O", "T", "S", "Z", "J", "L"] : 7 types
         x_offset = 16 * (piece_type_index // 4) # either 0 or 16
-        y_offset = piece_type_index % 4 # 4 positions on the left and 3 on the right, and one spare (7 types in total)
+        y_offset = 4 * (piece_type_index % 4) # 4 positions on the left and 3 on the right, and three spare (7 types in total)
         board_padded[y_offset:y_offset + 4, x_offset:x_offset + 4] = shape_padded_4x4
 
-        # TODO: use the one spare 4x4 slot in the lower-right corner to encode the score or another feature
+        # TODO: use the spare 4x4 slots in the lower-left corner & 8x4 slot in the lower-right corner to encode the score or other features
 
-        print_board(board_padded)
+        # print_board(board_padded)
 
         return board_padded.reshape(1, 20, 20, 1)
 
@@ -78,27 +78,33 @@ class State:
 
 
 
-def pad_piece_4x4(self, piece):
+def pad_piece_4x4(piece):
     shape = np.array(piece["shape"])
     shape_padded = np.zeros((4, 4))
     shape_padded[:shape.shape[0], :shape.shape[1]] = shape
     return shape_padded
 
-def fill_holes(self, board):
+def fill_holes(board):
     """Fill the inaccessible holes in the board. This makes in more unambiguous for the convolutional network. We do the naive thing that we do with the piece placement: no sliding sideways after drop, and we don't even move sideways during a fall under a cliff: everything below a filled cell is inaccessible."""
     for x in range(len(board[0])):
         for y in range(len(board)):
             if board[y, x] == 1:
                 board[y:, x] = 1
 
-def print_board(self, board):
+def print_board(board):
     """Print the board."""
     print() # empty line
+
+    # column numbers
+    print("   00000000011111111112")
+    print("   12345678901234567890")
+    print("  +--------------------+")
     for y in range(len(board)):
-        print(f"{y+1:2}", end=" ")
+        print(f"{y+1:2}", end="|")
         for x in range(len(board[0])):
             if board[y, x] == 1:
                 print("X", end="")
             else:
                 print(" ", end="")
-        print() # new line
+        print("|") # new line
+    print("  +--------------------+")

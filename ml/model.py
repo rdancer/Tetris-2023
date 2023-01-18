@@ -57,10 +57,10 @@ class Model:
     # myShape = encode_state(get_state()).shape
     # model.add(tf.keras.layers.Input(input_shape=myShape))
 
-    model.add(tf.keras.layers.Conv2D(32, (3, 3), activation='relu', input_shape=(20, 20, 1)))
+    model.add(tf.keras.layers.Conv2D(128, (3, 3), activation='relu', input_shape=(20, 20, 1)))
     # model.add(tf.keras.layers.MaxPooling2D((2, 2)))
-    model.add(tf.keras.layers.Conv2D(64, (3, 3), activation='relu'))
-    model.add(tf.keras.layers.MaxPooling2D((2, 2)))
+    model.add(tf.keras.layers.Conv2D(96, (3, 3), activation='relu'))
+    # model.add(tf.keras.layers.MaxPooling2D((2, 2)))
     model.add(tf.keras.layers.Conv2D(64, (3, 3), activation='relu'))
     model.add(tf.keras.layers.Flatten())
     model.add(tf.keras.layers.Dense(64, activation='relu'))
@@ -114,13 +114,14 @@ class Model:
         actionChoice = np.argmax(prediction)
 
 
-      print("piece:", state["piece"]["type"], "position:", possible_plays[actionChoice]["position"], "rotation:", possible_plays[actionChoice]["rotation"], "reward:", rewards[actionChoice], "(" + str(rewards[np.argmax(prediction)] - rewards[np.argmax(rewards)]) + ")")
+      # print("piece:", state["piece"]["type"], "position:", possible_plays[actionChoice]["position"], "rotation:", possible_plays[actionChoice]["rotation"], "reward:", rewards[actionChoice], "(" + str(rewards[np.argmax(prediction)] - rewards[np.argmax(rewards)]) + ")")
 
       # Take the action.
       motion = possible_plays[actionChoice]["motion"]
       move.perform_motion(motion, True)
 
-      time.sleep(self.control.get_tick()/1000.0) # we don't collect the state after the tick, so this is just for show -- XXX there seems to be some race condition and if we don't sleep(), the training moves are weird
+      # time.sleep(self.control.get_tick()/1000.0) # we don't collect the state after the tick, so there is only one problem: XXX if we don't sleep, we will evaluate the same tetromino more than once, because the nextPiece() call will not have happened yet -- this is fine for off-policy with no memory, but once we are doing reinforcement learning with history, we will need to sync.
+      # TODO Registering a callback with the control object might be the way to go.
 
       # Update the model.
       with stdout_redirected("/dev/null"):
