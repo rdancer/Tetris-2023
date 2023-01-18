@@ -8,8 +8,7 @@ import argparse
 # --off-policy: use off-policy training (true or false)
 # --num-iterations: number of iterations to train for
 parser = argparse.ArgumentParser()
-parser.add_argument("--off-policy", type=bool, default=True, help="set to false to train on-policy")
-parser.add_argument("--num-iterations", type=int, default=42, help="number of games to play")
+parser.add_argument("--num-iterations", type=int, default=7500, help="number of games to play")
 parser.add_argument("--url", type=str, default="http://localhost:8080", help="URL of the Tetris server")
 parser.add_argument("--tick", type=int, default=100, help="speed of the game [milliseconds]") # milliseconds
 args = parser.parse_args()
@@ -28,6 +27,6 @@ def main():
         print ("Training the model...")
         model = Model(control)
         control.set_tick(args.tick)
-        model.train_model(args.num_iterations, args.off_policy)
+        model.train_model(args.num_iterations)
 
 main()

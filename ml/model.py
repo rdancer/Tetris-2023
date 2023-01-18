@@ -11,9 +11,6 @@ from reward import Reward
 from move import Move
 from state import State
 
-MODEL_SAVE_FILE_NAME = "autopilot-model.h5"
-MODEL_WEIGHTS_SAVE_FILE_NAME = "autopilot-model-weights.h5"
-
 class stdout_redirected(object):
     def __init__(self, to="/dev/null"):
         self.to = to
@@ -30,10 +27,9 @@ class Model:
   def __init__(self, control):
     self.control = control
     self.model = self.create_model()
-    self.weightsLoaded = False
     self.state = State(control)
 
-  def create_model(self):
+  def create_model_simple(self):
     """Create model -- new version written by hand, now with some actual understanding of what I'm doing"""
     model = tf.keras.Sequential()
 
@@ -53,15 +49,40 @@ class Model:
 
     return model
 
-  def train_model(self, num_iterations, offPolicy=True):
-    """Train the model."""
-    # Track the elapsed time.
-    self.start_time = time.time()
+  def create_model(self):
+    """Convolutional 2D model that takes padded board + embedded piece shapes as input and outputs one of the 40 actions"""
+    model = tf.keras.Sequential()
 
+    # Comment this out so that the shape is not specified until the model is first instantiated
+    # myShape = encode_state(get_state()).shape
+    # model.add(tf.keras.layers.Input(input_shape=myShape))
+
+    model.add(tf.keras.layers.Conv2D(32, (3, 3), activation='relu', input_shape=(20, 20, 1)))
+    # model.add(tf.keras.layers.MaxPooling2D((2, 2)))
+    model.add(tf.keras.layers.Conv2D(64, (3, 3), activation='relu'))
+    model.add(tf.keras.layers.MaxPooling2D((2, 2)))
+    model.add(tf.keras.layers.Conv2D(64, (3, 3), activation='relu'))
+    model.add(tf.keras.layers.Flatten())
+    model.add(tf.keras.layers.Dense(64, activation='relu'))
+
+    numOutputs = 4 * 10
+    model.add(tf.keras.layers.Dense(numOutputs, activation='softmax'))
+
+    # Compile the model.
+    model.compile(optimizer='adam', loss='mse')
+
+    return model
+
+  def train_model(self, num_iterations):
+    """Train the model."""
+    epsilon = 0.001
+    epsilon_delta = (0.95 - epsilon) / num_iterations
+    self.autoSaver = AutoSaver(self.model)
     games_played = 0
     print ("Iteration: " + str(games_played + 1) + "/" + str(num_iterations))
     while games_played < num_iterations:
       if self.control.is_game_over():
+        epsilon += epsilon_delta
         self.control.new_game()
         games_played += 1
         if games_played < num_iterations:
@@ -85,8 +106,8 @@ class Model:
       # Choose an action.
       with stdout_redirected("/dev/null"):
         prediction = self.model.predict(state_encoded)
-      self.maybeLoadWeights() # We have called the model, so now the model knows its input shape, so we can load weights
-      if offPolicy:
+      self.autoSaver.maybeLoadWeights() # We have called the model, so now the model knows its input shape, so we can load weights
+      if epsilon < np.random.rand():
         actionChoice = np.argmax(rewards)
         assert(actionChoice == np.argmax(rewards_softmax))
       else:
@@ -104,22 +125,34 @@ class Model:
       # Update the model.
       with stdout_redirected("/dev/null"):
         self.model.fit(state_encoded, rewards_softmax, epochs=1, batch_size=1, verbose=0)
-      self.maybeSaveWeights()
+      self.autoSaver.maybeSaveWeights()
 
   def softmax(self, x):
     """Compute softmax values for each sets of scores in x."""
     e_x = np.exp(x - np.max(x))
     return e_x / e_x.sum()
 
+class AutoSaver:
+  """This class provides methods for saving and loading the model weights to/from a file."""
+
+  MODEL_SAVE_FILE_NAME = "autopilot-model.h5"
+  MODEL_WEIGHTS_SAVE_FILE_NAME = "autopilot-model-weights.h5"
+
+  def __init__(self, model):
+    self.model = model
+    self.weightsLoaded = False
+
   def maybeSaveWeights(self):
     """Save the model & weights to a file every minute."""
+    if not hasattr(self, 'start_time'):
+      self.start_time = time.time()
     elapsed_time = time.time() - self.start_time
     if elapsed_time >= 60:
       # Save model & weights to HDF5 files
-      self.model.save(MODEL_SAVE_FILE_NAME)
-      print("Saved model to file " + MODEL_SAVE_FILE_NAME)
-      self.model.save_weights(MODEL_WEIGHTS_SAVE_FILE_NAME)
-      print("Saved weights to file " + MODEL_WEIGHTS_SAVE_FILE_NAME)
+      self.model.save(self.MODEL_SAVE_FILE_NAME)
+      print("Saved model to file " + self.MODEL_SAVE_FILE_NAME)
+      self.model.save_weights(self.MODEL_WEIGHTS_SAVE_FILE_NAME)
+      print("Saved weights to file " + self.MODEL_WEIGHTS_SAVE_FILE_NAME)
       self.start_time = time.time()
 
   def maybeLoadWeights(self):
@@ -128,11 +161,11 @@ class Model:
       return
     self.weightsLoaded = True
     # Check if the model file exists.
-    if os.path.exists(MODEL_WEIGHTS_SAVE_FILE_NAME):
+    if os.path.exists(self.MODEL_WEIGHTS_SAVE_FILE_NAME):
       # Load weights into the model
       try:
-        self.model.load_weights(MODEL_WEIGHTS_SAVE_FILE_NAME) # This will fail if the model has been changed since the weights were saved
-        print("Loaded weights from file " + MODEL_WEIGHTS_SAVE_FILE_NAME)
+        self.model.load_weights(self.MODEL_WEIGHTS_SAVE_FILE_NAME) # This will fail if the model has been changed since the weights were saved
+        print("Loaded weights from file " + self.MODEL_WEIGHTS_SAVE_FILE_NAME)
       except:
         print("Weights file found, but failed to load weights (most likely model has changed since last save) -- starting with random weights and will overwrite weights file")
     else:

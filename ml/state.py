@@ -11,12 +11,13 @@ class State:
         state = self.control.get_state()
         return state
 
-    def encode_state(self, state):
+    def encode_state_vector(self, state):
+        """Encode the state as a vector."""
         board = np.array(state["board"])
         piece = state["piece"]
 
         # pad the shape so that all the shape have the same size
-        shape_padded_4x4 = self.pad_piece_4x4(piece)
+        shape_padded_4x4 = pad_piece_4x4(piece)
 
         # one-hot encode the piece type
         piece_type = np.zeros(7)
@@ -40,8 +41,64 @@ class State:
 
         return state.reshape(1, -1)
 
-    def pad_piece_4x4(self, piece):
-        shape = np.array(piece["shape"])
-        shape_padded = np.zeros((4, 4))
-        shape_padded[:shape.shape[0], :shape.shape[1]] = shape
-        return shape_padded
+    def encode_state_2d(self, state):
+        """
+        Encode the state as a 2D array.
+
+        Based on the approach described in (accessed 2023-01-17):
+        https://www.askforgametask.com/tutorial/machine-learning/ai-plays-tetris-with-cnn/
+        """
+        board = np.array(state["board"])
+        piece = state["piece"]
+
+        shape_padded_4x4 = pad_piece_4x4(piece)
+
+        # create a new 20x20 array and place the board centered in the middle
+        # convolutional networks like square inputs
+        board_padded = np.zeros((20, 20))
+        board_padded[:, 5:15] = board
+        fill_holes(board_padded)
+
+        # place the individual pieces on the board, in the margins
+        # the convolutional network loves when the pieces are spatially unique as well as shape unique
+        piece_type_index = self.control.piece_types.index(piece["type"]) # ["I", "O", "T", "S", "Z", "J", "L"] : 7 types
+        x_offset = 16 * (piece_type_index // 4) # either 0 or 16
+        y_offset = piece_type_index % 4 # 4 positions on the left and 3 on the right, and one spare (7 types in total)
+        board_padded[y_offset:y_offset + 4, x_offset:x_offset + 4] = shape_padded_4x4
+
+        # TODO: use the one spare 4x4 slot in the lower-right corner to encode the score or another feature
+
+        print_board(board_padded)
+
+        return board_padded.reshape(1, 20, 20, 1)
+
+    def encode_state(self, state):
+        """Choose the encoding here."""
+        return self.encode_state_2d(state)
+
+
+
+def pad_piece_4x4(self, piece):
+    shape = np.array(piece["shape"])
+    shape_padded = np.zeros((4, 4))
+    shape_padded[:shape.shape[0], :shape.shape[1]] = shape
+    return shape_padded
+
+def fill_holes(self, board):
+    """Fill the inaccessible holes in the board. This makes in more unambiguous for the convolutional network. We do the naive thing that we do with the piece placement: no sliding sideways after drop, and we don't even move sideways during a fall under a cliff: everything below a filled cell is inaccessible."""
+    for x in range(len(board[0])):
+        for y in range(len(board)):
+            if board[y, x] == 1:
+                board[y:, x] = 1
+
+def print_board(self, board):
+    """Print the board."""
+    print() # empty line
+    for y in range(len(board)):
+        print(f"{y+1:2}", end=" ")
+        for x in range(len(board[0])):
+            if board[y, x] == 1:
+                print("X", end="")
+            else:
+                print(" ", end="")
+        print() # new line
