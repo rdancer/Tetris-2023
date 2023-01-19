@@ -10,7 +10,7 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("--num-iterations", type=int, default=7500, help="number of games to play")
 parser.add_argument("--url", type=str, default="http://localhost:8080", help="URL of the Tetris server")
-# If we set the tick too low; the brick fall down before the model can make a prediction. 25ms is a good value on my machine.
+# If we set the tick too low; the brick fall down before the model can make a prediction.
 parser.add_argument("--tick", type=int, default=25, help="speed of the game [milliseconds]") # milliseconds
 args = parser.parse_args()
 

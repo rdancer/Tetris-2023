@@ -10,6 +10,8 @@ import time
 from reward import Reward
 from move import Move
 from state import State
+import math
+import tensorflowjs as tfjs # For saving the model in a format that can be used in the browser
 
 class stdout_redirected(object):
     def __init__(self, to="/dev/null"):
@@ -73,20 +75,26 @@ class Model:
 
     return model
 
-  def train_model(self, num_iterations):
+  def train_model(self, num_iterations, epsilon=1):
     """Train the model."""
-    epsilon = 0.001
     epsilon_delta = (0.95 - epsilon) / num_iterations
     self.autoSaver = AutoSaver(self.model)
     games_played = 0
+    total_reward = 0
+    reward_history = []
+    state_history = []
     print ("Iteration: " + str(games_played + 1) + "/" + str(num_iterations))
     while games_played < num_iterations:
       if self.control.is_game_over():
+        self.replay(total_reward, reward_history, state_history, epsilon)
         epsilon += epsilon_delta
         self.control.new_game()
         games_played += 1
         if games_played < num_iterations:
           print ("Iteration: " + str(games_played + 1) + "/" + str(num_iterations))
+          total_reward = 0
+          reward_history = []
+          state_history = []
         else:
           print ("Training complete.")
         continue
@@ -123,10 +131,38 @@ class Model:
       # time.sleep(self.control.get_tick()/1000.0) # we don't collect the state after the tick, so there is only one problem: XXX if we don't sleep, we will evaluate the same tetromino more than once, because the nextPiece() call will not have happened yet -- this is fine for off-policy with no memory, but once we are doing reinforcement learning with history, we will need to sync.
       # TODO Registering a callback with the control object might be the way to go.
 
+      # Evaluate the action.
+      model_choice_index = np.argmax(prediction)
+      model_choice_reward = rewards[model_choice_index]
+      total_reward += model_choice_reward
+      reward_history.append(model_choice_reward)
+      state_history.append(state_encoded)
+
       # Update the model.
       with stdout_redirected("/dev/null"):
         self.model.fit(state_encoded, rewards_softmax, epochs=1, batch_size=1, verbose=0)
       self.autoSaver.maybeSaveWeights()
+
+  def replay(self, total_reward, reward_history, state_history, epsilon, discount_factor=0.95):
+    """Replay the game and train the model."""
+    print("Replaying game with epsilon = " + str(epsilon), "total reward = " + str(total_reward), "discount factor = " + str(discount_factor))
+    print("Game length: " + str(len(reward_history)))
+
+    # how many states do we want to look ahead -- Nth state to influence the reward by 1%
+    lookAhead = int(math.log(1/100, discount_factor))
+    print ("Look ahead: " + str(lookAhead))
+
+    # Tetris being a solved problem, we should never really be in a state where we have no moves left, so we can just disregard the end-game.
+
+    print("Ignoring endgame states: %.2f%% of total game length" % (lookAhead / len(reward_history) * 100))
+    for i in range(len(reward_history) - lookAhead):
+      for j in range(lookAhead):
+        reward_history[i] += discount_factor ** j * reward_history[i+j]
+
+    # XXX we don't know how to weigh the rewards for the actions that did not get chosen, though
+    # XXX use gradient tape??
+    print("Training model... XXXXXX Does not work, skipping XXXXXX")
+    # self.model.fit(state_history, reward_history, epochs=1, batch_size=1, verbose=0)
 
   def softmax(self, x):
     """Compute softmax values for each sets of scores in x."""
@@ -137,6 +173,7 @@ class AutoSaver:
   """This class provides methods for saving and loading the model weights to/from a file."""
 
   MODEL_SAVE_FILE_NAME = "autopilot-model.h5"
+  MODEL_JSON_SAVE_DIR = "./model/"
   MODEL_WEIGHTS_SAVE_FILE_NAME = "autopilot-model-weights.h5"
 
   def __init__(self, model):
@@ -152,6 +189,8 @@ class AutoSaver:
       # Save model & weights to HDF5 files
       self.model.save(self.MODEL_SAVE_FILE_NAME)
       print("Saved model to file " + self.MODEL_SAVE_FILE_NAME)
+      tfjs.converters.save_keras_model(self.model, self.MODEL_JSON_SAVE_DIR)
+      print("Saved JSON model to directory " + self.MODEL_JSON_SAVE_DIR)
       self.model.save_weights(self.MODEL_WEIGHTS_SAVE_FILE_NAME)
       print("Saved weights to file " + self.MODEL_WEIGHTS_SAVE_FILE_NAME)
       self.start_time = time.time()

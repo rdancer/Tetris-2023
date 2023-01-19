@@ -41,6 +41,17 @@ let tickInterval = 1000;
     });
 })();
 
+(function maybeEnableAutopilot() {
+    // if the URL looks like https://example.com/?...&autopilot=true&...
+    if (window.location.search.includes('autopilot=true')) {
+        // Start the autopilot automatically after the page has loaded
+        window.onload = function() {
+            startButton.click()
+            autopilotButton.click()
+        }
+    }
+})();
+
 const pieceTypes = ["I", "O", "T", "S", "Z", "J", "L"];
 
 const pieces = {
@@ -463,6 +474,7 @@ class Control {
         clearInterval(gameInterval);
         gameInterval = setInterval(gameLoop, tickInterval);
     }
+    static getPieceTypes() { return pieceTypes; }
 }
 
 function isPaused() {
