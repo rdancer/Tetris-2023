@@ -26,4 +26,4 @@ In order to re-train the model, you will need a few dependencies (see above).
 
 ## Auto-autopilot
 
-To run the autopilot automatically on page load, add autopilot=true to the URL like so: [https://example.com/?autopilot=true](https://example.com/?autopilot=true).
+To run the autopilot automatically on page load, add autopilot=true to the URL like so: [https://rdancer.github.io/Tetris-2023/?autopilot=true](https://rdancer.github.io/Tetris-2023/?autopilot=true).
