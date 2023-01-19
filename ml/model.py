@@ -75,9 +75,10 @@ class Model:
 
     return model
 
-  def train_model(self, num_iterations, epsilon=1):
+  def train_model(self, num_iterations, epsilon=0.95):
     """Train the model."""
     epsilon_delta = (0.95 - epsilon) / num_iterations
+    epsilon_delta = max(epsilon_delta, 0) # Only increase
     self.autoSaver = AutoSaver(self.model)
     games_played = 0
     total_reward = 0
