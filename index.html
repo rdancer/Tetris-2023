@@ -54,6 +54,17 @@
       <button id="automate-button" class="automate-button button" tabindex="-1">
         <span class="label">Auto</span>
       </button>
+    <div class="algorithm-choice">
+      <input checked="checked" type="radio" id="convoluted-neural-network" name="algorithm-choice" value="HTML">
+        <label for="convoluted-neural-network"><abbr title="Convolutional Neural Network trained to approximate a reward function.">Convolutional</abbr></label>
+      </input><br>
+      <input disabled="disabled" type="radio" id="css" name="algorithm-choice" value="CSS">
+        <label for="css"><abbr title="Allowed to play a large number of games and learn from its mistakes / successes.">Reinforcement</abbr></label>
+      </input>
+      <input disabled="disabled" type="radio" id="javascript" name="algorithm-choice" value="JavaScript">
+        <label for="javascript"><abbr title="Old-school algorithm that evaluates possible plays and chooses the best one; coefficients optimalised by genetic algorithm">Genetic</abbr></label>
+      </input>
+    </div>
     </div>
     <div id="console"></div>
     <footer>
