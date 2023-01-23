@@ -69,6 +69,11 @@
 .touchscreen #drop-button {
   display: block;
 }
+
+/* fix: prevent UI flicker */
+#automate-button { display: none; }
+.touchscreen #automate-button, .no-touchscreen #automate-button { display: block; }
+
 body {
     overflow: hidden;
     display: flex;
@@ -125,6 +130,14 @@ body {
     padding: calc(var(--grid-size) * 10 / 40);
     margin-bottom: calc(var(--grid-size) * 4 / 40);
 }
+
+#automate-button {
+  transform: translateY(6em); /* XXX margin-top doesn't work */
+}
+.autopilot-enabled .automate-button .label::before {
+  content: "✅ ";
+}
+
 .button,
 .pause.button .label::after {
     font-size: calc(var(--text-size-medium));
@@ -294,4 +307,16 @@ body {
   -moz-user-select: none;     /* Mozilla Firefox */
   -ms-user-select: none;      /* Internet Explorer/Edge */
   user-select: none;          /* Standard syntax */
+}
+
+/* Choose the algorithm */
+
+.algorithm-choice {
+  display: none;
+}
+.autopilot-enabled .algorithm-choice {
+  /* display: block; /* hide everything now because there only is one real option, and we're not ready to present to the public */
+}
+.algorithm-choice abbr {
+  text-decoration: none;
 }

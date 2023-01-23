@@ -1,9 +1,9 @@
 
 // Start the game automatically after the page has loaded
-// and enable touch events
+// and enable touch event handling
 window.onload = function() {
     startButton.click()
-    TranslateTouchEventsToSyntheticKeyboardEvents(gameBoard);
+    Touch(gameBoard);
 }
 
 
@@ -20,6 +20,10 @@ const startButton = document.getElementById("start-button");
 const pauseButton = document.getElementById("pause-button");
 const currentScoreDisplay = document.getElementById("current-score-display");
 const highScoreDisplay = document.getElementById("high-score-display");
+const autopilotButton = document.getElementById("automate-button");
+const autopilot = new Autopilot(autopilotButton);
+
+let tickInterval = 1000;
 
 (function maybeDebug() {
     // Show the debug button if the URL contains the #debug hash
@@ -37,7 +41,16 @@ const highScoreDisplay = document.getElementById("high-score-display");
     });
 })();
 
-//new TranslateTouchEventsToSyntheticKeyboardEvents(gameBoard)
+(function maybeEnableAutopilot() {
+    // if the URL looks like https://example.com/?...&autopilot=true&...
+    if (window.location.search.includes('autopilot=true')) {
+        // Start the autopilot automatically after the page has loaded
+        window.onload = function() {
+            startButton.click()
+            autopilotButton.click()
+        }
+    }
+})();
 
 const pieceTypes = ["I", "O", "T", "S", "Z", "J", "L"];
 
@@ -111,7 +124,8 @@ function createPiece() {
         type: type,
         x: 4,
         y: 0,
-        shape: pieces[type].shape
+        shape: pieces[type].shape,
+        rotation: 0
     };
     // Check if the new piece collides with any other piece and move it upwards if it does
     while (!checkCollision(currentPiece.shape)) {
@@ -175,6 +189,7 @@ function rotatePiece() {
     newShape = flip(newShape);
     if (checkCollision(newShape)) {
         currentPiece.shape = newShape;
+        currentPiece.rotation = (currentPiece.rotation + 1) % 4;
     }
     drawPiece();
 }
@@ -282,8 +297,12 @@ function resetGame() {
     document.body.classList.remove("game-over");
 }
 
+function getHighScore() {
+    return +localStorage.getItem("highScore") || 0;
+}
+
 function updateHighScoreDisplay() {
-    highScoreDisplay.innerHTML = localStorage.getItem("highScore") || 0;
+    highScoreDisplay.innerHTML = getHighScore();
 }
 
 function maybeSaveHighScore() {
@@ -326,7 +345,7 @@ function fallenBlockExistsAtPosition(x, y) {
 document.addEventListener("keydown", event => {
     switch (event.keyCode) {
         case 32: // Space
-            Control.space();
+            Control.drop();
             break;        
         case 37: // Left arrow
             Control.left();
@@ -338,7 +357,7 @@ document.addEventListener("keydown", event => {
             Control.down()
             break;
         case 38: // Up arrow
-            Control.up();
+            Control.rotate();
             break;
     }
     drawPiece();
@@ -392,15 +411,11 @@ function Piece(piece) {
 startButton.addEventListener("click", (event) => {
     event.preventDefault()
     event.target.blur() // lest the <Space> keypress that we use to drop the current piece depresses the button *facepalm*
-    //startButton.style.display = "none";
-    resetGame();
-    createPiece();
-    drawPiece();
-    gameInterval = setInterval(gameLoop, 1000);
+    Control.newGame();
 });
 
 class Control {
-    static space() {
+    static drop() {
         while (canMoveDown()) {
             movePieceDown();
         }
@@ -420,9 +435,46 @@ class Control {
             movePieceDown();
         }
     }
-    static up() {
+    static rotate() {
         rotatePiece();
     }
+    static getScore() {
+        return score;
+    }
+    static getBoard() {
+        const board = JSON.parse(JSON.stringify(gameBoardArray));
+        board.forEach(row => row.forEach((value, index) => row[index] = value ? 1 : 0)); // normalise in place
+        return board;
+    }
+    static getPiece() {
+        return JSON.parse(JSON.stringify(currentPiece));
+    }
+    static getHighScore() { return getHighScore(); }
+    static getScore() { return score; }
+    static getState() {
+        const result = {
+            "board": Control.getBoard(),
+            "piece": Control.getPiece(),
+            "score": score,
+            "highScore": getHighScore(),
+            "isGameOver": isGameOver(),
+        }
+        return result;
+    }
+    static newGame() {
+        resetGame();
+        createPiece();
+        drawPiece();
+        gameInterval = setInterval(gameLoop, tickInterval);
+    }
+    static isGameOver() { return isGameOver(); }
+    static getTick() { return tickInterval; }
+    static setTick(newTick) {
+        tickInterval = newTick;
+        clearInterval(gameInterval);
+        gameInterval = setInterval(gameLoop, tickInterval);
+    }
+    static getPieceTypes() { return pieceTypes; }
 }
 
 function isPaused() {

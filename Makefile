@@ -1,13 +1,17 @@
 .PHONY: all
 all: browser server
 
+.PHONY: clean
+clean:
+	make -C ./ml clean
+	
 .PHONY: server
 server:
-	python3 ./http-server.py 8000
+	python3 ./http-server.py 8888
 
 .PHONY: browser
 browser:
-	open http://localhost:8000/
+	open http://localhost:8888/
 
 
 .PHONY: prompt
