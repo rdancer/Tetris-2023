@@ -1,6 +1,6 @@
 # Tetris 2023
 
-Welcome to Tetris 2023! This game was created with the help of AI, using [ChatGPT](https://openai.com/blog/chatgpt/) to generate code and instructions, followed by AI-aided debugging.
+Welcome to Tetris 2023! This game was created with the help of AI, using [ChatGPT](https://openai.com/blog/chatgpt/) to generate all the code and instructions, followed by AI-aided debugging.
 
 To play, simply click on the [online version](https://rdancer.github.io/Tetris-2023/) or open `index.html` in your browser. No server is needed.
 
