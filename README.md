@@ -2,7 +2,7 @@
 
 Welcome to Tetris 2023! This game was created with the help of AI, using [ChatGPT](https://openai.com/blog/chatgpt/) to generate all the code and documentation, followed by AI-aided debugging.
 
-To play, simply click on the [online version](https://rdancer.github.io/Tetris-2023/) or open `index.html` in your browser. No server is needed.
+To play, simply click on the [online version](https://tetris.rdancer.org/) or open `index.html` in your browser. No server is needed.
 
 Use the left and right arrow keys to move the active piece, and the up arrow key to rotate it. You can also use the down arrow key to speed up its descent or the space bar to instantly drop the piece.
 
