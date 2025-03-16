@@ -11,3 +11,8 @@ The game has an autoplay mode, activated by the *Auto* button. Encouraged by the
 We hope you have a great time playing Tetris 2023!
 
 ![screenshot of a completed tetris game](img/screen-recording.gif)
+
+
+--
+
+see also: [*Tetris 2025*](https://github.com/rdancer/tetris-2025)
